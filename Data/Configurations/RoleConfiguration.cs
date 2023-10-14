@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace HELMoliday.Configurations;
+namespace HELMoliday.Data.Configurations;
 
 public class RoleConfiguration : IEntityTypeConfiguration<Role>
 {

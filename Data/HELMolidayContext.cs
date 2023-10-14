@@ -1,4 +1,4 @@
-﻿using HELMoliday.Configurations;
+﻿using HELMoliday.Data.Configurations;
 using HELMoliday.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
