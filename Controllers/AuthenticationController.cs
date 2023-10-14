@@ -1,4 +1,4 @@
-﻿using HELMoliday.Contracts;
+﻿using HELMoliday.Contracts.Authentication;
 using HELMoliday.Models;
 using HELMoliday.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HELMoliday.Controllers;
 
-[Route("Auth")]
+[Route("auth")]
 [ApiController]
 [AllowAnonymous]
 public class AuthenticationController : ControllerBase
@@ -20,7 +20,7 @@ public class AuthenticationController : ControllerBase
         _jwtTokenGenerator = jwtTokenGenerator;
     }
 
-    [Route("Login")]
+    [Route("login")]
     [HttpPost]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -37,6 +37,7 @@ public class AuthenticationController : ControllerBase
         }
 
         var authResponse = new AuthResponse(
+            user.Id,
             user.FirstName,
             user.LastName,
             request.Email,
@@ -46,7 +47,7 @@ public class AuthenticationController : ControllerBase
         return Ok(authResponse);
     }
 
-    [Route("Register")]
+    [Route("register")]
     [HttpPost]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
@@ -70,6 +71,7 @@ public class AuthenticationController : ControllerBase
         }
 
         var authResponse = new AuthResponse(
+            user.Id,
             request.FirstName,
             request.LastName,
             request.Email,
