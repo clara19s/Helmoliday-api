@@ -62,7 +62,7 @@ namespace HELMoliday.Controllers
                 return NotFound(new { error = "User not found." });
             }
 
-            var passwordChangeResult = await _userManager.ChangePasswordAsync(user, dto.oldPassword, dto.newPassword);
+            var passwordChangeResult = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
             if (!passwordChangeResult.Succeeded)
             {
                 return Problem("Password couldn't be changed.");
