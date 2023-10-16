@@ -5,7 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace HELMoliday.Services;
+namespace HELMoliday.Services.JwtToken;
 
 public class JwtSettings
 {

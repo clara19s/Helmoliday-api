@@ -1,17 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using HELMoliday.Data;
 using HELMoliday.Models;
-using Microsoft.AspNetCore.Authorization;
-using HELMoliday.Services;
 using Microsoft.AspNetCore.Identity;
 using HELMoliday.Contracts.Account;
 using HELMoliday.Contracts.Authentication;
+using HELMoliday.Services.JwtToken;
 
 namespace HELMoliday.Controllers
 {
     [Route("account")]
     [ApiController]
-    [Authorize]
     public class AccountController : ControllerBase
     {
         private readonly HELMolidayContext _context;

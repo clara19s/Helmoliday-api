@@ -1,6 +1,6 @@
 ﻿using HELMoliday.Models;
 
-namespace HELMoliday.Services;
+namespace HELMoliday.Services.JwtToken;
 
 public interface IJwtTokenGenerator
 {

@@ -1,6 +1,6 @@
 ﻿using HELMoliday.Contracts.Authentication;
 using HELMoliday.Models;
-using HELMoliday.Services;
+using HELMoliday.Services.JwtToken;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;

@@ -1,12 +1,12 @@
 using HELMoliday.Data;
 using HELMoliday.Models;
-using HELMoliday.Services;
+using HELMoliday.Services.JwtToken;
+using HELMoliday.Services.Weather;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -79,6 +79,10 @@ builder.Services.AddIdentityCore<User>(options =>
     .AddRoles<Role>()
     .AddEntityFrameworkStores<HELMolidayContext>();
 
+// Add Weather Service.
+builder.Services.AddHttpClient("weather");
+builder.Services.AddSingleton<IWeatherService, OpenWeatherMapService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -93,6 +97,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers().RequireAuthorization();
 
 app.Run();
