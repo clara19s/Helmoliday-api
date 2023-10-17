@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using System.ComponentModel;
 using HELMoliday.Helpers;
 using HELMoliday.Contracts.Common;
+using HELMoliday.Services.Weather;
 
 namespace HELMoliday.Controllers
 {
@@ -21,11 +22,13 @@ namespace HELMoliday.Controllers
     {
         private readonly HELMolidayContext _context;
         private readonly UserManager<User> _userManager;
+        private readonly IWeatherService _weatherService;
 
-        public HolidaysController(HELMolidayContext context, UserManager<User> userManager)
+        public HolidaysController(HELMolidayContext context, UserManager<User> userManager, IWeatherService weatherService)
         {
             _context = context;
             _userManager = userManager;
+            _weatherService = weatherService;
         }
 
         // GET: api/Holidays
@@ -161,8 +164,21 @@ namespace HELMoliday.Controllers
             return holidayResponse;
         }
 
+        // GET: api/Holidays/5
+        [HttpGet("{id}/weather")]
+        public async Task<ActionResult<HolidayResponse>> GetHolidayWeather(Guid id)
+    
+        {
+            var holiday = _context.Holidays.Where(h=> h.Id == id).FirstOrDefault();
+            var city = holiday.Address.City;
+            var weather = await _weatherService.GetWeatherForCityAsync(city);
+            return weather is null ? NotFound() : Ok(weather);
+
+        }
+
         // PUT: api/Holidays/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+       
         [HttpPut("{id}")]
         public async Task<IActionResult> PutHoliday(Guid id, HolidayRequest holiday)
         {
