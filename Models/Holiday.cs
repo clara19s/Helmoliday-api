@@ -22,6 +22,8 @@ public partial class Holiday
     [Required]
     public Address Address { get; set; }
 
+    public bool Published { get; set; } = false;
+
     public virtual ICollection<Invitation> Inviters { get; set; } = new List<Invitation>();
 
     public virtual ICollection<Unfolding> Unfoldings { get; set; } = new List<Unfolding>();

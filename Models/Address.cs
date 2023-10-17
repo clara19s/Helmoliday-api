@@ -1,5 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using HELMoliday.Contracts.Common;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+
 
 namespace HELMoliday.Models;
 
@@ -36,4 +38,6 @@ public class Address
     {
         return $"{StreetNumber} {Street}, {PostalCode} {City.ToUpper()} ({Country.ToUpper()})";
     }
+
+    
 }
