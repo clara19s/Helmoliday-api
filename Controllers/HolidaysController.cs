@@ -31,7 +31,7 @@ namespace HELMoliday.Controllers
         // GET: api/Holidays
         [Route("published")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetHolidays()
+        public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetHolidays([FromQuery] HolidayFilter? filter)
         {
             if (_context.Holidays == null)
             {
@@ -40,25 +40,41 @@ namespace HELMoliday.Controllers
             var user = await _userManager.GetUserAsync(HttpContext.User);
             var holidays = _context.Holidays.Include(h => h.Inviters).Include(h => h.Unfoldings)
             .Where(h => h.Published)
-            .ToList();
+            .AsQueryable();
 
-             var holidaysDto = holidays.Select(holiday =>
+            if (filter is not null)
             {
-                var listGuests = holiday.Inviters.Select(i => i.UserId.ToString());
-                var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
-                var holidayResponse = new HolidayResponse(
+                if (string.IsNullOrEmpty(filter.query))
+                {
+                    holidays = holidays.Where(h => h.Name.Contains(filter.query) || h.Description.Contains(filter.query));
+                }
+                if (!string.IsNullOrEmpty(filter.StartDate))
+                {
+                    holidays = holidays.Where(h => h.StartDate >= DateConverter.ConvertStringToDate(filter.StartDate));
+                }
+                if (!string.IsNullOrEmpty(filter.EndDate))
+                {
+                    holidays = holidays.Where(h => h.StartDate >= DateConverter.ConvertStringToDate(filter.EndDate));
+                }
+            }
 
-                    holiday.Name,
-                     holiday.Description,
-                     holiday.StartDate.ToString(),
-                     holiday.EndDate.ToString(),
-                     AddressConverter.CreateFromModel(holiday.Address),
-                     holiday.Published,
-                     listGuests,
-                     listActivities
-                );
-                return holidayResponse;
-            });
+            var holidaysDto = holidays.ToList().Select(holiday =>
+           {
+               var listGuests = holiday.Inviters.Select(i => i.UserId.ToString());
+               var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
+               var holidayResponse = new HolidayResponse(
+
+                   holiday.Name,
+                    holiday.Description,
+                    holiday.StartDate.ToString(),
+                    holiday.EndDate.ToString(),
+                    AddressConverter.CreateFromModel(holiday.Address),
+                    holiday.Published,
+                    listGuests,
+                    listActivities
+               );
+               return holidayResponse;
+           });
 
             return Ok(holidaysDto);
         }
@@ -66,18 +82,35 @@ namespace HELMoliday.Controllers
         // GET: api/Holidays
         [Route("invited")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetMyHolidays()
+        public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetMyHolidays([FromQuery] HolidayFilter? filter)
         {
             if (_context.Holidays == null)
             {
                 return NotFound();
             }
+
             var user = await _userManager.GetUserAsync(HttpContext.User);
             var holidays = _context.Holidays.Include(h => h.Inviters).Include(h => h.Unfoldings)
-            .Where( h => h.Inviters.Any(i => i.UserId == user.Id))
-            .ToList();
+            .Where(h => h.Inviters.Any(i => i.UserId == user.Id))
+            .AsQueryable();
 
-            var holidaysDto = holidays.Select(holiday =>
+            if (filter is not null)
+            {
+                if (string.IsNullOrEmpty(filter.query))
+                {
+                    holidays = holidays.Where(h => h.Name.Contains(filter.query) || h.Description.Contains(filter.query));
+                }
+                if (!string.IsNullOrEmpty(filter.StartDate))
+                {
+                    holidays = holidays.Where(h => h.StartDate >= DateConverter.ConvertStringToDate(filter.StartDate));
+                }
+                if (!string.IsNullOrEmpty(filter.EndDate))
+                {
+                    holidays = holidays.Where(h => h.StartDate >= DateConverter.ConvertStringToDate(filter.EndDate));
+                }
+            }
+
+            var holidaysDto = holidays.ToList().Select(holiday =>
             {
                 var listGuests = holiday.Inviters.Select(i => i.UserId.ToString());
                 var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
