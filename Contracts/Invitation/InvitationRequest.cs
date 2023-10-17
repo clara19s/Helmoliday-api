@@ -1,6 +1,8 @@
 ﻿namespace HELMoliday.Contracts.Invitation
 {
-    public class InvitationRequest
-    {
-    }
+    public record InvitationRequest(
+        string HolidayId,
+        string UserId
+        );
+    
 }

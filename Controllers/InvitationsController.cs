@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HELMoliday.Data;
 using HELMoliday.Models;
+using HELMoliday.Contracts.Invitation;
 
 namespace HELMoliday.Controllers
 {
@@ -21,93 +22,25 @@ namespace HELMoliday.Controllers
             _context = context;
         }
 
-        // GET: api/Invitations
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Invitation>>> GetInvitations()
-        {
-          if (_context.Invitations == null)
-          {
-              return NotFound();
-          }
-            return await _context.Invitations.ToListAsync();
-        }
-
-        // GET: api/Invitations/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Invitation>> GetInvitation(Guid id)
-        {
-          if (_context.Invitations == null)
-          {
-              return NotFound();
-          }
-            var invitation = await _context.Invitations.FindAsync(id);
-
-            if (invitation == null)
-            {
-                return NotFound();
-            }
-
-            return invitation;
-        }
-
-        // PUT: api/Invitations/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutInvitation(Guid id, Invitation invitation)
-        {
-            if (id != invitation.UserId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(invitation).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!InvitationExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
 
         // POST: api/Invitations
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Invitation>> PostInvitation(Invitation invitation)
+        public async Task<ActionResult<Invitation>> PostInvitation( [FromBody] InvitationRequest invitation)
         {
           if (_context.Invitations == null)
           {
               return Problem("Entity set 'HELMolidayContext.Invitations'  is null.");
           }
-            _context.Invitations.Add(invitation);
-            try
+            var invitationModel = new Invitation
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (InvitationExists(invitation.UserId))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+                UserId = Guid.Parse(invitation.UserId),
+                HolidayId = Guid.Parse(invitation.HolidayId),
 
-            return CreatedAtAction("GetInvitation", new { id = invitation.UserId }, invitation);
+            };
+            _context.Invitations.Add(invitationModel);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         // DELETE: api/Invitations/5
