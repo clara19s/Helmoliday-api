@@ -3,6 +3,7 @@
 namespace HELMoliday.Contracts.Holiday
 {
     public record HolidayResponse(
+        Guid Id,
         string Name,
         string Description,
         string StartDate,

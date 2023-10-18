@@ -14,6 +14,12 @@ public class Activity
     public string? Description { get; set; }
 
     [Required]
+    public DateTimeOffset StartDate { get; set; }
+
+    [Required]
+    public DateTimeOffset EndDate { get; set; }
+
+    [Required]
     public Address Address { get; set; }
 
     public virtual ICollection<Unfolding> Unfoldings { get; set; } = new List<Unfolding>();

@@ -24,7 +24,7 @@ public partial class Holiday
 
     public bool Published { get; set; } = false;
 
-    public virtual ICollection<Invitation> Inviters { get; set; } = new List<Invitation>();
+    public virtual ICollection<Invitation> Invitations { get; set; } = new List<Invitation>();
 
     public virtual ICollection<Unfolding> Unfoldings { get; set; } = new List<Unfolding>();
 }

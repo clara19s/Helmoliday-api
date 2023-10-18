@@ -1,22 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HELMoliday.Data;
 using HELMoliday.Models;
 using HELMoliday.Contracts.Holiday;
 using Microsoft.AspNetCore.Identity;
-using System.ComponentModel;
 using HELMoliday.Helpers;
 using HELMoliday.Contracts.Common;
 using HELMoliday.Services.Weather;
 
 namespace HELMoliday.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("holidays")]
     [ApiController]
     public class HolidaysController : ControllerBase
     {
@@ -41,7 +35,7 @@ namespace HELMoliday.Controllers
                 return NotFound();
             }
             var user = await _userManager.GetUserAsync(HttpContext.User);
-            var holidays = _context.Holidays.Include(h => h.Inviters).Include(h => h.Unfoldings)
+            var holidays = _context.Holidays.Include(h => h.Invitations).Include(h => h.Unfoldings)
             .Where(h => h.Published)
             .AsQueryable();
 
@@ -63,18 +57,18 @@ namespace HELMoliday.Controllers
 
             var holidaysDto = holidays.ToList().Select(holiday =>
            {
-               var listGuests = holiday.Inviters.Select(i => i.UserId.ToString());
+               var listGuests = holiday.Invitations.Select(i => i.UserId.ToString());
                var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
                var holidayResponse = new HolidayResponse(
-
+                   holiday.Id,
                    holiday.Name,
-                    holiday.Description,
-                    holiday.StartDate.ToString(),
-                    holiday.EndDate.ToString(),
-                    AddressConverter.CreateFromModel(holiday.Address),
-                    holiday.Published,
-                    listGuests,
-                    listActivities
+                   holiday.Description,
+                   holiday.StartDate.ToString(),
+                   holiday.EndDate.ToString(),
+                   AddressConverter.CreateFromModel(holiday.Address),
+                   holiday.Published,
+                   listGuests,
+                   listActivities
                );
                return holidayResponse;
            });
@@ -93,8 +87,8 @@ namespace HELMoliday.Controllers
             }
 
             var user = await _userManager.GetUserAsync(HttpContext.User);
-            var holidays = _context.Holidays.Include(h => h.Inviters).Include(h => h.Unfoldings)
-            .Where(h => h.Inviters.Any(i => i.UserId == user.Id))
+            var holidays = _context.Holidays.Include(h => h.Invitations).Include(h => h.Unfoldings)
+            .Where(h => h.Invitations.Any(i => i.UserId == user.Id))
             .AsQueryable();
 
             if (filter is not null)
@@ -115,18 +109,18 @@ namespace HELMoliday.Controllers
 
             var holidaysDto = holidays.ToList().Select(holiday =>
             {
-                var listGuests = holiday.Inviters.Select(i => i.UserId.ToString());
+                var listGuests = holiday.Invitations.Select(i => i.UserId.ToString());
                 var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
                 var holidayResponse = new HolidayResponse(
-
+                    holiday.Id,
                     holiday.Name,
-                     holiday.Description,
-                     holiday.StartDate.ToString(),
-                     holiday.EndDate.ToString(),
-                     AddressConverter.CreateFromModel(holiday.Address),
-                     holiday.Published,
-                     listGuests,
-                     listActivities
+                    holiday.Description,
+                    holiday.StartDate.ToString(),
+                    holiday.EndDate.ToString(),
+                    AddressConverter.CreateFromModel(holiday.Address),
+                    holiday.Published,
+                    listGuests,
+                    listActivities
                 );
                 return holidayResponse;
             });
@@ -142,24 +136,24 @@ namespace HELMoliday.Controllers
             {
                 return NotFound();
             }
-            var holiday = await _context.Holidays.Include(h => h.Inviters).Include(h => h.Unfoldings).Where(h => h.Id == id).FirstOrDefaultAsync();
+            var holiday = await _context.Holidays.Include(h => h.Invitations).Include(h => h.Unfoldings).Where(h => h.Id == id).FirstOrDefaultAsync();
 
             if (holiday == null)
             {
                 return NotFound();
             }
-            var listGuests = holiday.Inviters.Select(i => i.UserId.ToString());
+            var listGuests = holiday.Invitations.Select(i => i.UserId.ToString());
             var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
             var holidayResponse = new HolidayResponse(
-
+                holiday.Id,
                 holiday.Name,
-                 holiday.Description,
-                 holiday.StartDate.ToString(),
-                 holiday.EndDate.ToString(),
-                 AddressConverter.CreateFromModel(holiday.Address),
-                 holiday.Published,
-                 listGuests,
-                 listActivities
+                holiday.Description,
+                holiday.StartDate.ToString(),
+                holiday.EndDate.ToString(),
+                AddressConverter.CreateFromModel(holiday.Address),
+                holiday.Published,
+                listGuests,
+                listActivities
             );
             return holidayResponse;
         }
@@ -167,9 +161,9 @@ namespace HELMoliday.Controllers
         // GET: api/Holidays/5
         [HttpGet("{id}/weather")]
         public async Task<ActionResult<HolidayResponse>> GetHolidayWeather(Guid id)
-    
+
         {
-            var holiday = _context.Holidays.Where(h=> h.Id == id).FirstOrDefault();
+            var holiday = _context.Holidays.Where(h => h.Id == id).FirstOrDefault();
             var city = holiday.Address.City;
             var weather = await _weatherService.GetWeatherForCityAsync(city);
             return weather is null ? NotFound() : Ok(weather);
@@ -178,7 +172,7 @@ namespace HELMoliday.Controllers
 
         // PUT: api/Holidays/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-       
+
         [HttpPut("{id}")]
         public async Task<IActionResult> PutHoliday(Guid id, HolidayRequest holiday)
         {
@@ -217,8 +211,6 @@ namespace HELMoliday.Controllers
                 StartDate = DateConverter.ConvertStringToDate(holidayDto.StartDate),
                 EndDate = DateConverter.ConvertStringToDate(holidayDto.EndDate),
                 Address = AddressConverter.CreateFromDto(holidayDto.Address)
-
-
             };
             _context.Holidays.Add(holiday);
             await _context.SaveChangesAsync();
@@ -230,7 +222,7 @@ namespace HELMoliday.Controllers
                 Accepted = true
 
             };
-            holiday.Inviters.Add(invitation);
+            holiday.Invitations.Add(invitation);
 
             await _context.SaveChangesAsync();
 
