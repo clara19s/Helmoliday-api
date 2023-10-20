@@ -53,9 +53,4 @@ public class JwtTokenGenerator : IJwtTokenGenerator
 
         return new JwtSecurityTokenHandler().WriteToken(securityToken);
     }
-
-    public string GenerateToken()
-    {
-        throw new NotImplementedException();
-    }
 }
