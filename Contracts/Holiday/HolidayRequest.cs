@@ -13,7 +13,7 @@ namespace HELMoliday.Contracts.Holiday
      );
 
     public record HolidayFilter(
-        string? query,
+        string? Query,
         string? StartDate,
        string? EndDate);
 }

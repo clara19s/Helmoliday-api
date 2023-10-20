@@ -41,9 +41,9 @@ namespace HELMoliday.Controllers
 
             if (filter is not null)
             {
-                if (string.IsNullOrEmpty(filter.query))
+                if (string.IsNullOrEmpty(filter.Query))
                 {
-                    holidays = holidays.Where(h => h.Name.Contains(filter.query) || h.Description.Contains(filter.query));
+                    holidays = holidays.Where(h => h.Name.Contains(filter.Query) || h.Description.Contains(filter.Query));
                 }
                 if (!string.IsNullOrEmpty(filter.StartDate))
                 {
@@ -93,9 +93,9 @@ namespace HELMoliday.Controllers
 
             if (filter is not null)
             {
-                if (string.IsNullOrEmpty(filter.query))
+                if (!string.IsNullOrEmpty(filter.Query))
                 {
-                    holidays = holidays.Where(h => h.Name.Contains(filter.query) || h.Description.Contains(filter.query));
+                    holidays = holidays.Where(h => h.Name.Contains(filter.Query) || h.Description.Contains(filter.Query));
                 }
                 if (!string.IsNullOrEmpty(filter.StartDate))
                 {
@@ -161,13 +161,18 @@ namespace HELMoliday.Controllers
         // GET: api/Holidays/5
         [HttpGet("{id}/weather")]
         public async Task<ActionResult<HolidayResponse>> GetHolidayWeather(Guid id)
-
         {
-            var holiday = _context.Holidays.Where(h => h.Id == id).FirstOrDefault();
-            var city = holiday.Address.City;
-            var weather = await _weatherService.GetWeatherForCityAsync(city);
-            return weather is null ? NotFound() : Ok(weather);
-
+            try
+            {
+                var holiday = _context.Holidays.Where(h => h.Id == id).FirstOrDefault();
+                var city = holiday.Address.City;
+                var weather = await _weatherService.GetWeatherForCityAsync(city);
+                return weather is null ? NotFound() : Ok(weather);
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
         }
 
         // PUT: api/Holidays/5
