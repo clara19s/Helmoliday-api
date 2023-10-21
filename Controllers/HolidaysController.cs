@@ -231,7 +231,7 @@ namespace HELMoliday.Controllers
 
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Created("GetHoliday", new { id = holiday.Id });
         }
 
         // DELETE: api/Holidays/5
