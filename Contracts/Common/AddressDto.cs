@@ -15,7 +15,7 @@ namespace HELMoliday.Contracts.Common
         public static Address CreateFromDto(AddressDto addressDto) => new Address
         {
             Street = addressDto.Street,
-            StreetNumber = int.Parse(addressDto.StreetNumber),
+            StreetNumber = addressDto.StreetNumber,
             City = addressDto.City,
             Country = addressDto.Country,
             PostalCode = addressDto.PostalCode,

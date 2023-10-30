@@ -1,5 +1,4 @@
-﻿using HELMoliday.Contracts.Common;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 
@@ -15,7 +14,7 @@ public class Address
     [Required(ErrorMessage = "The {0} field is required.")]
     [Range(0, int.MaxValue)]
     [Display(Name = "Street number")]
-    public int StreetNumber { get; set; }
+    public string StreetNumber { get; set; }
 
     [Required(ErrorMessage = "The {0} field is required.")]
     [StringLength(10, MinimumLength = 4,
