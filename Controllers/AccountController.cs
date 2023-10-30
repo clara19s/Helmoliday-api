@@ -34,7 +34,7 @@ namespace HELMoliday.Controllers
                 return NotFound(new { error = "User not found." });
             }
 
-            return Ok(new UserInfoResponse(user.Id, user.Email, user.FirstName, user.LastName));
+            return Ok(new UserInfoResponse(user.Id, user.FirstName, user.LastName, user.Email));
         }
 
         [Route("profile")]
@@ -60,7 +60,7 @@ namespace HELMoliday.Controllers
 
             await _userManager.UpdateAsync(user);
 
-            return Ok(new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, _jwtTokenGenerator.GenerateToken(user)));
+            return Ok(new AuthResponse(user.Id, user.FirstName, user.LastName, user.Email, _jwtTokenGenerator.GenerateToken(user)));
         }
 
         [Route("password")]
