@@ -1,8 +1,5 @@
-﻿namespace HELMoliday.Contracts.Invitation
-{
-    public record InvitationRequest(
-        string HolidayId,
-        string UserId
-        );
-    
-}
+﻿namespace HELMoliday.Contracts.Invitation;
+public record InvitationRequest(
+    string HolidayId,
+    string UserId);
+

@@ -4,7 +4,11 @@
     {
         public static DateTime ConvertStringToDate(string dateString)
         {
-            if (DateTime.TryParseExact(dateString, "yyyy/MM/dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime date))
+            if (DateTime.TryParseExact(
+                dateString, "yyyy/MM/dd HH:mm",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out DateTime date)
+                )
             {
                 return date;
             }

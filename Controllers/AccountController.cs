@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using HELMoliday.Contracts.Account;
 using HELMoliday.Contracts.Authentication;
 using HELMoliday.Services.JwtToken;
+using HELMoliday.Contracts.User;
 
 namespace HELMoliday.Controllers
 {
@@ -23,6 +24,19 @@ namespace HELMoliday.Controllers
             _jwtTokenGenerator = jwtTokenGenerator;
         }
 
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetUserInfo()
+        {
+            var user = await _userManager.GetUserAsync(HttpContext.User);
+
+            if (user == null)
+            {
+                return NotFound(new { error = "User not found." });
+            }
+
+            return Ok(new UserInfoResponse(user.Id, user.Email, user.FirstName, user.LastName));
+        }
+
         [Route("profile")]
         [HttpPut()]
         public async Task<IActionResult> ChangeProfileInformation(UpsertUserRequest dto)
@@ -36,7 +50,7 @@ namespace HELMoliday.Controllers
 
             if (dto.Email != user.Email && await _userManager.FindByEmailAsync(dto.Email) is not null)
             {
-                return BadRequest(new {error = "E-mail already in use."});
+                return BadRequest(new { error = "E-mail already in use." });
             }
 
             user.Email = dto.Email;

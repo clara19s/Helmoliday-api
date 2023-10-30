@@ -1,6 +1,8 @@
 using HELMoliday.Data;
 using HELMoliday.Models;
+using HELMoliday.Options;
 using HELMoliday.Services.JwtToken;
+using HELMoliday.Services.OAuth;
 using HELMoliday.Services.Weather;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +17,9 @@ var configuration = builder.Configuration;
 // Add services to the container.
 builder.Services.AddControllers();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddScoped<GoogleOAuthService>();
+
+// Add Swagger.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -70,6 +74,21 @@ builder.Services.AddSwaggerGen(option =>
  });
 });
 
+// Add CORS.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy = policy.WithOrigins(
+            "http://localhost:5173",
+            "https://localhost:5173",
+            "https://panoramix.cg.helmo.be",
+            "https://panoramix.cg.helmo.be")
+        .AllowAnyMethod()
+        .AllowAnyHeader();
+    });
+});
+
 // Add Identity.
 builder.Services.AddIdentityCore<User>(options =>
 {
@@ -93,6 +112,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("CorsPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();

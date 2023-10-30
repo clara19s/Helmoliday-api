@@ -80,16 +80,23 @@ namespace HELMoliday.Controllers
         [HttpGet("{id}/weather")]
         public async Task<ActionResult<WeatherResponse>> GetActivityWeather([FromServices] IWeatherService weatherService, [FromRoute] Guid id)
         {
-            if (_context.Activities == null)
-                return NotFound();
+            try
+            {
+                if (_context.Activities == null)
+                    return NotFound();
 
-            var activity = _context.Activities.Find(id);
+                var activity = _context.Activities.Find(id);
 
-            if (activity == null)
-                return NotFound();
+                if (activity == null)
+                    return NotFound();
 
-            var weather = await weatherService.GetWeatherForCityAsync(activity.Address.City);
-            return weather is null ? NotFound() : Ok(weather);
+                var weather = await weatherService.GetWeatherForCityAsync(activity.Address.City);
+                return weather is null ? NotFound() : Ok(weather);
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
         }
 
         // PUT: api/Activities/5

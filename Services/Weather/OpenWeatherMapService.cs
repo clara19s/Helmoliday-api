@@ -18,15 +18,22 @@ public class OpenWeatherMapService : IWeatherService
         HttpClient client = _httpClientFactory.CreateClient("weather");
         var url = $"https://pro.openweathermap.org/data/2.5/weather?q={city}&appid={ApiKey}&units=metric";
 
-        var weatherResponse = await client.GetAsync(url);
-        if (weatherResponse.StatusCode == HttpStatusCode.NotFound)
+        try
         {
-            return null;
+            var weatherResponse = await client.GetAsync(url);
+            if (weatherResponse.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
+            var weather = await weatherResponse.Content.ReadFromJsonAsync<OpenWeatherMapWeatherResponse>();
+
+            return new WeatherResponse(weather!.Description[0].Weather, weather!.Main.Temp, weather.Main.FeelsLike);
         }
-
-        var weather = await weatherResponse.Content.ReadFromJsonAsync<OpenWeatherMapWeatherResponse>();
-
-        return new WeatherResponse(weather!.Description[0].Weather, weather!.Main.Temp, weather.Main.FeelsLike);
+        catch (HttpRequestException ex)
+        {
+            throw new ApplicationException("Une erreur est survenue lors de la récupération des données météorologiques.", ex);
+        }
     }
 
     private class OpenWeatherMapWeatherResponse
