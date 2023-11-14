@@ -100,6 +100,10 @@ namespace HELMoliday.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutActivity(Guid id, UpsertActivityRequest activityDto)
         {
+            if (_context.Activities == null)
+            {
+                return NotFound();
+            }
             var activity = await _context.Activities.FindAsync(id);
 
             if (activity == null)
@@ -110,7 +114,7 @@ namespace HELMoliday.Controllers
             activity.Name = activityDto.Name;
             activity.Description = activityDto.Description;
             activity.StartDate = DateConverter.ConvertStringToDate(activityDto.StartDate);
-            activity.StartDate = DateConverter.ConvertStringToDate(activityDto.EndDate);
+            activity.EndDate = DateConverter.ConvertStringToDate(activityDto.EndDate);
             activity.Address = AddressConverter.CreateFromDto(activityDto.Address);
 
             await _context.SaveChangesAsync();
@@ -123,10 +127,11 @@ namespace HELMoliday.Controllers
         [HttpPost("holiday/{holidayId}")]
         public async Task<ActionResult<ActivityResponse>> PostActivity([FromRoute] Guid holidayId, [FromBody] UpsertActivityRequest activityDto)
         {
-            var holiday = await _context.Holidays.FirstOrDefaultAsync(h => h.Id == holidayId);
+            var holiday = await _context.Holidays.FindAsync(holidayId);
+
             if (holiday == null)
             {
-                return NotFound(new { error = "Période de vacances non trouvée." });
+                return NotFound();
             }
 
             var activity = new Activity
@@ -135,13 +140,19 @@ namespace HELMoliday.Controllers
                 Description = activityDto.Description,
                 StartDate = DateConverter.ConvertStringToDate(activityDto.StartDate),
                 EndDate = DateConverter.ConvertStringToDate(activityDto.EndDate),
-                Address = AddressConverter.CreateFromDto(activityDto.Address),
-                HolidayId = holidayId,
+                Address = AddressConverter.CreateFromDto(activityDto.Address)
             };
 
-            _context.Activities.Add(activity);
+            holiday.Activities.Add(activity);
+            await _context.SaveChangesAsync();
 
-            return NoContent();
+            return CreatedAtAction(nameof(GetActivity), new { id = activity.Id }, new ActivityResponse(
+                activity.Id,
+                activity.Name,
+                activity.Description,
+                activity.StartDate.ToString(),
+                activity.EndDate.ToString(),
+                AddressConverter.CreateFromModel(activity.Address)));
         }
 
         // DELETE: api/Activities/5
