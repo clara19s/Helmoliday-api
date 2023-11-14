@@ -5,7 +5,7 @@
         public static DateTime ConvertStringToDate(string dateString)
         {
             if (DateTime.TryParseExact(
-                dateString, "yyyy/MM/dd HH:mm",
+                dateString, "yyyy-MM-dd HH:mm",
                 System.Globalization.CultureInfo.InvariantCulture,
                 System.Globalization.DateTimeStyles.None, out DateTime date)
                 )
@@ -14,7 +14,7 @@
             }
             else
             {
-                throw new ArgumentException("La chaîne de caractères n'est pas au format valide (yyyy/MM/dd).");
+                throw new ArgumentException("La chaîne de caractères n'est pas au format valide (yyyy-MM-dd HH:ss).");
             }
         }
     }

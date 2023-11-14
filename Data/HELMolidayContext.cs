@@ -18,8 +18,6 @@ public partial class HELMolidayContext : IdentityDbContext<User, Role, Guid>
 
     public DbSet<Invitation> Invitations { get; set; }
 
-    public DbSet<Unfolding> Unfoldings { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -27,6 +25,5 @@ public partial class HELMolidayContext : IdentityDbContext<User, Role, Guid>
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new RoleConfiguration());
         modelBuilder.ApplyConfiguration(new InvitationConfiguration());
-        modelBuilder.ApplyConfiguration(new UnfoldingConfiguration());
     }
 }

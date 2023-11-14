@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HELMoliday.Data;
-using HELMoliday.Models;
 using HELMoliday.Contracts.Activity;
 using HELMoliday.Contracts.Common;
 using HELMoliday.Helpers;
@@ -32,8 +31,7 @@ namespace HELMoliday.Controllers
             }
 
             var holiday = await _context.Holidays
-                .Include(h => h.Unfoldings)
-                .ThenInclude(u => u.Activity)
+                .Include(h => h.Activities)
                 .FirstOrDefaultAsync(h => h.Id == holidayId);
 
             if (holiday == null)
@@ -41,9 +39,7 @@ namespace HELMoliday.Controllers
                 return NotFound(new { error = "Holiday not found." });
             }
 
-            return Ok(holiday.Unfoldings
-                .Select(u => u.Activity)
-                .Select(a => new ActivityResponse(
+            return Ok(holiday.Activities.Select(a => new ActivityResponse(
                     a.Id,
                     a.Name,
                     a.Description,
@@ -127,35 +123,23 @@ namespace HELMoliday.Controllers
         [HttpPost("holiday/{holidayId}")]
         public async Task<ActionResult<ActivityResponse>> PostActivity([FromRoute] Guid holidayId, [FromBody] UpsertActivityRequest activityDto)
         {
-            // Vérifiez si la période de vacances existe
             var holiday = await _context.Holidays.FirstOrDefaultAsync(h => h.Id == holidayId);
             if (holiday == null)
             {
-                return NotFound(new {error = "Période de vacances non trouvée." });
+                return NotFound(new { error = "Période de vacances non trouvée." });
             }
 
-            // Création de l'activité
             var activity = new Activity
             {
                 Name = activityDto.Name,
                 Description = activityDto.Description,
                 StartDate = DateConverter.ConvertStringToDate(activityDto.StartDate),
                 EndDate = DateConverter.ConvertStringToDate(activityDto.EndDate),
-                Address = AddressConverter.CreateFromDto(activityDto.Address)
+                Address = AddressConverter.CreateFromDto(activityDto.Address),
+                HolidayId = holidayId,
             };
 
             _context.Activities.Add(activity);
-
-            // Créez un nouvel objet Unfolding pour établir la relation entre l'activité et la période de vacances
-            var unfolding = new Unfolding
-            {
-                Activity = activity,
-                Holiday = holiday
-            };
-
-            // Ajoutez l'objet Unfolding à la base de données
-            _context.Unfoldings.Add(unfolding);
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }

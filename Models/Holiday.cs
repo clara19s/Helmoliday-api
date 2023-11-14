@@ -26,5 +26,5 @@ public partial class Holiday
 
     public virtual ICollection<Invitation> Invitations { get; set; } = new List<Invitation>();
 
-    public virtual ICollection<Unfolding> Unfoldings { get; set; } = new List<Unfolding>();
+    public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
 }
