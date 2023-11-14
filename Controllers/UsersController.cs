@@ -1,6 +1,7 @@
 ﻿using HELMoliday.Contracts.User;
 using HELMoliday.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace HELMoliday.Controllers;
 [Route("users")]
@@ -15,20 +16,25 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet()]
-    public async Task<IActionResult> GetUsers([FromQuery] string? query)
+    public async Task<IActionResult> GetUsersByEmail([FromQuery] string query)
     {
-        var users = _context.Users.AsQueryable();
 
-        if (!string.IsNullOrEmpty(query))
+        if (string.IsNullOrEmpty(query))
         {
-            users = users.Where(u => u.FirstName.Contains(query) || u.LastName.Contains(query) || u.Email.Contains(query));
+            return BadRequest("Veuillez spécifier une adresse e-mail valide.");
         }
 
-        return Ok(users.ToList()
-            .Select(u => new UserInfoResponse(
-                u.Id,
-                u.FirstName,
-                u.LastName,
-                u.Email)));
+        var user =await _context.Users.Where(u => u.Email == query).FirstOrDefaultAsync();
+
+        if (user == null)
+        {
+            return NotFound($"L'adresse e-mail {query} ne correspond à aucun compte utilisateur.");
+        }
+
+        return Ok(new UserInfoResponse(
+            user.Id,
+            user.FirstName,
+            user.LastName,
+            user.Email));
     }
 }

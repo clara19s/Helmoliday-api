@@ -20,7 +20,7 @@ public class GoogleOAuthService
             { "client_id", "357502490301-kdn4nnodt0rdtgl44546s6s3chipr6h4.apps.googleusercontent.com" },
             { "client_secret", "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" },
             { "code", code },
-            { "redirect_uri", "https://localhost:5173/oauth/google" },
+            { "redirect_uri", "http://localhost:5173/oauth/google" },
             { "grant_type", "authorization_code" }
         };
 
@@ -36,6 +36,7 @@ public class GoogleOAuthService
 
     public async Task<UserInfo> GetUserInfoAsync(string accessToken)
     {
+        // Récupérer les informations principales de l'utilisateur
         var requestUrl = $"https://www.googleapis.com/oauth2/v3/userinfo?access_token={accessToken}";
 
         var response = await _httpClient.GetAsync(requestUrl);

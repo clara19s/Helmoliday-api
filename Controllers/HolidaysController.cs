@@ -8,277 +8,347 @@ using HELMoliday.Helpers;
 using HELMoliday.Contracts.Common;
 using HELMoliday.Services.Weather;
 using HELMoliday.Contracts.User;
+using PusherServer;
 
-namespace HELMoliday.Controllers
+namespace HELMoliday.Controllers;
+[Route("holidays")]
+[ApiController]
+public class HolidaysController : ControllerBase
 {
-    [Route("holidays")]
-    [ApiController]
-    public class HolidaysController : ControllerBase
+    private readonly HELMolidayContext _context;
+    private readonly UserManager<User> _userManager;
+    private readonly IWeatherService _weatherService;
+
+    public HolidaysController(HELMolidayContext context, UserManager<User> userManager, IWeatherService weatherService)
     {
-        private readonly HELMolidayContext _context;
-        private readonly UserManager<User> _userManager;
-        private readonly IWeatherService _weatherService;
+        _context = context;
+        _userManager = userManager;
+        _weatherService = weatherService;
+    }
 
-        public HolidaysController(HELMolidayContext context, UserManager<User> userManager, IWeatherService weatherService)
+    // GET: api/Holidays
+    [Route("published")]
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetHolidays([FromQuery] HolidayFilter? filter)
+    {
+        if (_context.Holidays == null)
         {
-            _context = context;
-            _userManager = userManager;
-            _weatherService = weatherService;
+            return NotFound();
+        }
+        var user = await _userManager.GetUserAsync(HttpContext.User);
+
+        var holidaysQuery = _context.Holidays
+            .Include(h => h.Invitations)
+                .ThenInclude(i => i.User)
+            .Include(h => h.Unfoldings)
+            .Where(h => h.Published)
+            .AsQueryable();
+
+        if (filter is not null)
+        {
+            if (!string.IsNullOrEmpty(filter.Query))
+            {
+                holidaysQuery = holidaysQuery.Where(h => h.Name.Contains(filter.Query) || h.Description.Contains(filter.Query));
+            }
+            if (!string.IsNullOrEmpty(filter.StartDate))
+            {
+                holidaysQuery = holidaysQuery.Where(h => h.StartDate >= DateConverter.ConvertStringToDate(filter.StartDate));
+            }
+            if (!string.IsNullOrEmpty(filter.EndDate))
+            {
+                holidaysQuery = holidaysQuery.Where(h => h.StartDate <= DateConverter.ConvertStringToDate(filter.EndDate));
+            }
         }
 
-        // GET: api/Holidays
-        [Route("published")]
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetHolidays([FromQuery] HolidayFilter? filter)
+        var holidays = await holidaysQuery.ToListAsync();
+
+        var holidaysDto = holidays.Select(holiday =>
         {
-            if (_context.Holidays == null)
-            {
-                return NotFound();
-            }
-            var user = await _userManager.GetUserAsync(HttpContext.User);
-
-            var holidaysQuery = _context.Holidays
-                .Include(h => h.Invitations)
-                    .ThenInclude(i => i.User)
-                .Include(h => h.Unfoldings)
-                .Where(h => h.Published)
-                .AsQueryable();
-
-            if (filter is not null)
-            {
-                if (!string.IsNullOrEmpty(filter.Query))
-                {
-                    holidaysQuery = holidaysQuery.Where(h => h.Name.Contains(filter.Query) || h.Description.Contains(filter.Query));
-                }
-                if (!string.IsNullOrEmpty(filter.StartDate))
-                {
-                    holidaysQuery = holidaysQuery.Where(h => h.StartDate >= DateConverter.ConvertStringToDate(filter.StartDate));
-                }
-                if (!string.IsNullOrEmpty(filter.EndDate))
-                {
-                    holidaysQuery = holidaysQuery.Where(h => h.StartDate <= DateConverter.ConvertStringToDate(filter.EndDate));
-                }
-            }
-
-            var holidays = await holidaysQuery.ToListAsync();
-
-            var holidaysDto = holidays.Select(holiday =>
-            {
-                var listGuests = holiday.Invitations.Select(i => i.User).ToList();
-                var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
-                var holidayResponse = new HolidayResponse(
-                    holiday.Id,
-                    holiday.Name,
-                    holiday.Description,
-                    holiday.StartDate.ToString("yyyy/MM/dd HH:mm"),
-                    holiday.EndDate.ToString("yyyy/MM/dd HH:mm"),
-                    AddressConverter.CreateFromModel(holiday.Address),
-                    holiday.Published,
-                    listGuests.Select(g => new GuestResponse(g.Id, g.FirstName, g.LastName)),
-                    listActivities
-                );
-                return holidayResponse;
-            });
-
-            return Ok(holidaysDto);
-        }
-
-        // GET: api/Holidays
-        [Route("invited")]
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetMyHolidays([FromQuery] HolidayFilter? filter)
-        {
-            if (_context.Holidays == null)
-            {
-                return NotFound();
-            }
-
-            var user = await _userManager.GetUserAsync(HttpContext.User);
-            var holidaysQuery = _context.Holidays
-                .Include(h => h.Invitations)
-                    .ThenInclude(i => i.User)
-                .Include(h => h.Unfoldings)
-                .Where(h => h.Invitations.Any(i => i.UserId == user.Id))
-                .AsQueryable();
-
-            if (filter is not null)
-            {
-                if (!string.IsNullOrEmpty(filter.Query))
-                {
-                    holidaysQuery = holidaysQuery.Where(h => h.Name.Contains(filter.Query) || h.Description.Contains(filter.Query));
-                }
-                if (!string.IsNullOrEmpty(filter.StartDate))
-                {
-                    holidaysQuery = holidaysQuery.Where(h => h.StartDate >= DateConverter.ConvertStringToDate(filter.StartDate));
-                }
-                if (!string.IsNullOrEmpty(filter.EndDate))
-                {
-                    holidaysQuery = holidaysQuery.Where(h => h.StartDate <= DateConverter.ConvertStringToDate(filter.EndDate));
-                }
-            }
-
-            var holidays = await holidaysQuery.ToListAsync();
-
-            var holidaysDto = holidays.Select(holiday =>
-            {
-                var listGuests = holiday.Invitations.Select(i => i.User).ToList();
-                var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
-                var holidayResponse = new HolidayResponse(
-                    holiday.Id,
-                    holiday.Name,
-                    holiday.Description,
-                    holiday.StartDate.ToString("yyyy/MM/dd HH:mm"),
-                    holiday.EndDate.ToString("yyyy/MM/dd HH:mm"),
-                    AddressConverter.CreateFromModel(holiday.Address),
-                    holiday.Published,
-                    listGuests.Select(g => new GuestResponse(g.Id, g.FirstName, g.LastName)),
-                    listActivities
-                );
-                return holidayResponse;
-            });
-
-            return Ok(holidaysDto);
-        }
-
-        // GET: api/Holidays/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<HolidayResponse>> GetHoliday(Guid id)
-        {
-            if (_context.Holidays == null)
-            {
-                return NotFound();
-            }
-
-            var holiday = await _context.Holidays
-                .Include(h => h.Invitations)
-                    .ThenInclude(i => i.User)
-                .Include(h => h.Unfoldings)
-                .FirstOrDefaultAsync(h => h.Id == id);
-
-            if (holiday == null)
-            {
-                return NotFound();
-            }
-
             var listGuests = holiday.Invitations.Select(i => i.User).ToList();
             var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
             var holidayResponse = new HolidayResponse(
                 holiday.Id,
                 holiday.Name,
                 holiday.Description,
-                holiday.StartDate.ToString("yyyy/MM/dd HH:mm"),
-                holiday.EndDate.ToString("yyyy/MM/dd HH:mm"),
+                holiday.StartDate.ToString("yyyy-MM-dd HH:mm"),
+                holiday.EndDate.ToString("yyyy-MM-dd HH:mm"),
                 AddressConverter.CreateFromModel(holiday.Address),
                 holiday.Published,
-                listGuests.Select(g => new GuestResponse(
-                    g.Id, g.FirstName, g.LastName
-                )),
+                listGuests.Select(g => new GuestResponse(g.Id, g.FirstName, g.LastName)),
                 listActivities
             );
+            return holidayResponse;
+        });
 
-            return Ok(holidayResponse);
-        }
+        return Ok(holidaysDto);
+    }
 
-        // GET: api/Holidays/5
-        [HttpGet("{id}/weather")]
-        public async Task<ActionResult<HolidayResponse>> GetHolidayWeather(Guid id)
+    // GET: api/Holidays
+    [Route("invited")]
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetMyHolidays([FromQuery] HolidayFilter? filter)
+    {
+        if (_context.Holidays == null)
         {
-            try
-            {
-                var holiday = _context.Holidays.Where(h => h.Id == id).FirstOrDefault();
-                var city = holiday.Address.City;
-                var weather = await _weatherService.GetWeatherForCityAsync(city);
-                return weather is null ? NotFound() : Ok(weather);
-            }
-            catch (Exception ex)
-            {
-                return Problem(ex.Message);
-            }
+            return NotFound();
         }
 
-        // PUT: api/Holidays/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        var user = await _userManager.GetUserAsync(HttpContext.User);
+        var holidaysQuery = _context.Holidays
+            .Include(h => h.Invitations)
+                .ThenInclude(i => i.User)
+            .Include(h => h.Unfoldings)
+            .Where(h => h.Invitations.Any(i => i.UserId == user.Id))
+            .AsQueryable();
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutHoliday(Guid id, HolidayRequest holiday)
+        if (filter is not null)
         {
-            if (holiday == null)
+            if (!string.IsNullOrEmpty(filter.Query))
             {
-                return NotFound(new { error = "Holiday not found." });
+                holidaysQuery = holidaysQuery.Where(h => h.Name.Contains(filter.Query) || h.Description.Contains(filter.Query));
             }
-
-            var holidayBd = await _context.Holidays.FindAsync(id);
-
-            if (holidayBd == null)
+            if (!string.IsNullOrEmpty(filter.StartDate))
             {
-                return NotFound(new { error = "Holiday not found." });
+                holidaysQuery = holidaysQuery.Where(h => h.StartDate >= DateConverter.ConvertStringToDate(filter.StartDate));
             }
-
-            holidayBd.Description = holiday.Description;
-            holidayBd.Name = holiday.Name;
-            holidayBd.Address = AddressConverter.CreateFromDto(holiday.Address);
-            holidayBd.StartDate = DateConverter.ConvertStringToDate(holiday.StartDate);
-            holidayBd.EndDate = DateConverter.ConvertStringToDate(holiday.EndDate);
-            holidayBd.Published = holiday.Published;
-
-
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            if (!string.IsNullOrEmpty(filter.EndDate))
+            {
+                holidaysQuery = holidaysQuery.Where(h => h.StartDate <= DateConverter.ConvertStringToDate(filter.EndDate));
+            }
         }
 
-        // POST: api/Holidays
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Holiday>> PostHoliday(HolidayRequest holidayDto)
+        var holidays = await holidaysQuery.ToListAsync();
+
+        var holidaysDto = holidays.Select(holiday =>
         {
-            if (_context.Holidays == null)
-            {
-                return Problem("Entity set 'HELMolidayContext.Holidays' is null.");
-            }
-            var holiday = new Holiday
-            {
-                Name = holidayDto.Name,
-                Description = holidayDto.Description,
-                StartDate = DateConverter.ConvertStringToDate(holidayDto.StartDate),
-                EndDate = DateConverter.ConvertStringToDate(holidayDto.EndDate),
-                Address = AddressConverter.CreateFromDto(holidayDto.Address)
-            };
-            _context.Holidays.Add(holiday);
-            await _context.SaveChangesAsync();
-            var user = await _userManager.GetUserAsync(HttpContext.User);
-            var invitation = new Invitation
-            {
-                UserId = user.Id,
-                HolidayId = holiday.Id,
-                Accepted = true
+            var listGuests = holiday.Invitations.Select(i => i.User).ToList();
+            var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
+            var holidayResponse = new HolidayResponse(
+                holiday.Id,
+                holiday.Name,
+                holiday.Description,
+                holiday.StartDate.ToString("yyyy-MM-dd HH:mm"),
+                holiday.EndDate.ToString("yyyy-MM-dd HH:mm"),
+                AddressConverter.CreateFromModel(holiday.Address),
+                holiday.Published,
+                listGuests.Select(g => new GuestResponse(g.Id, g.FirstName, g.LastName)),
+                listActivities
+            );
+            return holidayResponse;
+        });
 
-            };
-            holiday.Invitations.Add(invitation);
+        return Ok(holidaysDto);
+    }
 
-            await _context.SaveChangesAsync();
-
-            return Created("GetHoliday", new { id = holiday.Id });
-        }
-
-        // DELETE: api/Holidays/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteHoliday(Guid id)
+    // GET: api/Holidays/5
+    [HttpGet("{id}")]
+    public async Task<ActionResult<HolidayResponse>> GetHoliday(Guid id)
+    {
+        if (_context.Holidays == null)
         {
-            if (_context.Holidays == null)
-            {
-                return NotFound();
-            }
-            var holiday = await _context.Holidays.FindAsync(id);
-            if (holiday == null)
-            {
-                return NotFound();
-            }
-
-            _context.Holidays.Remove(holiday);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return NotFound();
         }
+
+        var holiday = await _context.Holidays
+            .Include(h => h.Invitations)
+                .ThenInclude(i => i.User)
+            .Include(h => h.Unfoldings)
+            .FirstOrDefaultAsync(h => h.Id == id);
+
+        if (holiday == null)
+        {
+            return NotFound();
+        }
+
+        var listGuests = holiday.Invitations.Select(i => i.User).ToList();
+        var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
+        var holidayResponse = new HolidayResponse(
+            holiday.Id,
+            holiday.Name,
+            holiday.Description,
+            holiday.StartDate.ToString("yyyy-MM-dd HH:mm"),
+            holiday.EndDate.ToString("yyyy-MM-dd HH:mm"),
+            AddressConverter.CreateFromModel(holiday.Address),
+            holiday.Published,
+            listGuests.Select(g => new GuestResponse(
+                g.Id, g.FirstName, g.LastName
+            )),
+            listActivities
+        );
+
+        return Ok(holidayResponse);
+    }
+
+    // GET: api/Holidays/5
+    [HttpGet("{id}/weather")]
+    public async Task<ActionResult<HolidayResponse>> GetHolidayWeather(Guid id)
+    {
+        try
+        {
+            var holiday = _context.Holidays.Where(h => h.Id == id).FirstOrDefault();
+            var city = holiday.Address.City;
+            var weather = await _weatherService.GetWeatherForCityAsync(city);
+            return weather is null ? NotFound() : Ok(weather);
+        }
+        catch (Exception ex)
+        {
+            return Problem(ex.Message);
+        }
+    }
+
+    // PUT: api/Holidays/5
+    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> PutHoliday(Guid id, HolidayRequest holiday)
+    {
+        if (holiday == null)
+        {
+            return NotFound(new { error = "Holiday not found." });
+        }
+
+        var holidayBd = await _context.Holidays.FindAsync(id);
+
+        if (holidayBd == null)
+        {
+            return NotFound(new { error = "Holiday not found." });
+        }
+
+        holidayBd.Description = holiday.Description;
+        holidayBd.Name = holiday.Name;
+        holidayBd.Address = AddressConverter.CreateFromDto(holiday.Address);
+        holidayBd.StartDate = DateConverter.ConvertStringToDate(holiday.StartDate);
+        holidayBd.EndDate = DateConverter.ConvertStringToDate(holiday.EndDate);
+        holidayBd.Published = holiday.Published;
+
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    // POST: api/Holidays
+    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+    [HttpPost]
+    public async Task<ActionResult<Holiday>> PostHoliday(HolidayRequest holidayDto)
+    {
+        if (_context.Holidays == null)
+        {
+            return Problem("Entity set 'HELMolidayContext.Holidays' is null.");
+        }
+        var holiday = new Holiday
+        {
+            Name = holidayDto.Name,
+            Description = holidayDto.Description,
+            StartDate = DateConverter.ConvertStringToDate(holidayDto.StartDate),
+            EndDate = DateConverter.ConvertStringToDate(holidayDto.EndDate),
+            Address = AddressConverter.CreateFromDto(holidayDto.Address)
+        };
+        _context.Holidays.Add(holiday);
+        await _context.SaveChangesAsync();
+        var user = await _userManager.GetUserAsync(HttpContext.User);
+        var invitation = new Invitation
+        {
+            UserId = user.Id,
+            HolidayId = holiday.Id,
+            Accepted = true
+
+        };
+        holiday.Invitations.Add(invitation);
+
+        await _context.SaveChangesAsync();
+
+        return Created("GetHoliday", new { id = holiday.Id });
+    }
+
+    // DELETE: api/Holidays/5
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteHoliday(Guid id)
+    {
+        if (_context.Holidays == null)
+        {
+            return NotFound();
+        }
+        var holiday = await _context.Holidays.FindAsync(id);
+        if (holiday == null)
+        {
+            return NotFound();
+        }
+
+        _context.Holidays.Remove(holiday);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpPost("{id}/chat/auth")]
+    public async Task<ActionResult> ChatAuthentication([FromRoute] Guid id, [FromBody] ChatAuthRequest authRequest)
+    {
+        var user = await _userManager.GetUserAsync(HttpContext.User);
+        var options = new PusherOptions
+        {
+            Cluster = "eu",
+            Encrypted = false
+        };
+
+        // TODO: Get from config
+        var pusher = new Pusher(
+          "1700454",
+          "c79fa94e85416eeb4f1e",
+          "bca1b2adb1b72d81f3f3",
+          options);
+
+        var channelData = new PresenceChannelData()
+        {
+            user_id = user.Id.ToString(),
+            user_info = new
+            {
+                name = $"{user.FirstName} {user.LastName}",
+                avatar = "https://picsum.photos/200"
+            }
+        };
+
+        var auth = pusher.Authenticate(authRequest.ChannelName, authRequest.SocketId, channelData);
+        var json = auth.ToJson();
+        return new ContentResult { Content = json, ContentType = "application/json" };
+    }
+
+    [HttpPost("{id}/chat/messages")]
+    public async Task<ActionResult> SendMessage([FromRoute] Guid id, [FromBody] ChatMessageRequest request)
+    {
+        var user = await _userManager.GetUserAsync(HttpContext.User);
+        var options = new PusherOptions
+        {
+            Cluster = "eu",
+            Encrypted = false
+        };
+
+        // TODO: Get from config
+        var pusher = new Pusher(
+          "1700454",
+          "c79fa94e85416eeb4f1e",
+          "bca1b2adb1b72d81f3f3",
+          options);
+
+        await pusher.TriggerAsync(
+            channelName: $"presence-{id}",
+            eventName: "message",
+            data: new
+            {
+                sentAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                data = new {
+                    clientId = request.ClientId,
+                    text = request.Text,
+                    images = Array.Empty<string>()
+                },
+                from = new
+                {
+                    id = user.Id.ToString(),
+                    firstName = user.FirstName,
+                    lastName = user.LastName,
+                    email = user.Email
+                }
+            });
+        return Ok();
     }
 }
