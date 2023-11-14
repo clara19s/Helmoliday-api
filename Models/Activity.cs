@@ -22,5 +22,7 @@ public class Activity
     [Required]
     public Address Address { get; set; }
 
-    public virtual ICollection<Unfolding> Unfoldings { get; set; } = new List<Unfolding>();
+    public Holiday Holiday { get; set; }
+
+    public virtual Guid HolidayId { get; set; }
 }

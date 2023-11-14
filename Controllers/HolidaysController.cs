@@ -40,7 +40,7 @@ public class HolidaysController : ControllerBase
         var holidaysQuery = _context.Holidays
             .Include(h => h.Invitations)
                 .ThenInclude(i => i.User)
-            .Include(h => h.Unfoldings)
+            .Include(h => h.Activities)
             .Where(h => h.Published)
             .AsQueryable();
 
@@ -65,7 +65,7 @@ public class HolidaysController : ControllerBase
         var holidaysDto = holidays.Select(holiday =>
         {
             var listGuests = holiday.Invitations.Select(i => i.User).ToList();
-            var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
+            var listActivities = holiday.Activities.Select(u => u.Id.ToString());
             var holidayResponse = new HolidayResponse(
                 holiday.Id,
                 holiday.Name,
@@ -97,7 +97,7 @@ public class HolidaysController : ControllerBase
         var holidaysQuery = _context.Holidays
             .Include(h => h.Invitations)
                 .ThenInclude(i => i.User)
-            .Include(h => h.Unfoldings)
+            .Include(h => h.Activities)
             .Where(h => h.Invitations.Any(i => i.UserId == user.Id))
             .AsQueryable();
 
@@ -122,7 +122,7 @@ public class HolidaysController : ControllerBase
         var holidaysDto = holidays.Select(holiday =>
         {
             var listGuests = holiday.Invitations.Select(i => i.User).ToList();
-            var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
+            var listActivities = holiday.Activities.Select(u => u.Id.ToString());
             var holidayResponse = new HolidayResponse(
                 holiday.Id,
                 holiday.Name,
@@ -152,7 +152,7 @@ public class HolidaysController : ControllerBase
         var holiday = await _context.Holidays
             .Include(h => h.Invitations)
                 .ThenInclude(i => i.User)
-            .Include(h => h.Unfoldings)
+            .Include(h => h.Activities)
             .FirstOrDefaultAsync(h => h.Id == id);
 
         if (holiday == null)
@@ -161,7 +161,7 @@ public class HolidaysController : ControllerBase
         }
 
         var listGuests = holiday.Invitations.Select(i => i.User).ToList();
-        var listActivities = holiday.Unfoldings.Select(u => u.ActivityId.ToString());
+        var listActivities = holiday.Activities.Select(u => u.Id.ToString());
         var holidayResponse = new HolidayResponse(
             holiday.Id,
             holiday.Name,
@@ -220,7 +220,6 @@ public class HolidaysController : ControllerBase
         holidayBd.StartDate = DateConverter.ConvertStringToDate(holiday.StartDate);
         holidayBd.EndDate = DateConverter.ConvertStringToDate(holiday.EndDate);
         holidayBd.Published = holiday.Published;
-
 
         await _context.SaveChangesAsync();
 
