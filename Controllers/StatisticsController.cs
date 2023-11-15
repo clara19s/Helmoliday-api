@@ -2,9 +2,10 @@
 using HELMoliday.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace HELMoliday.Controllers;
-[Route("[controller]")]
+[Route("statistics")]
 [ApiController]
 public class StatisticsController : ControllerBase
 {
@@ -15,24 +16,32 @@ public class StatisticsController : ControllerBase
         _context = context;
     }
 
+    [HttpGet("users")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetTotalUsers()
+    {
+        var userCount = await _context.Users.CountAsync();
+        return Ok(userCount);
+    }
+
     [HttpGet("holidays")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetHolidaysByDate([FromQuery] string dateString)
+    public async Task<IActionResult> GetUsersOnHolidayByCountry([FromQuery] string dateString)
     {
         try
         {
             var date = DateConverter.ConvertStringToDate(dateString);
 
-            var usersOnHolidayCount = _context.Holidays
+            var usersOnHolidayByCountry = await _context.Holidays
+                .Include(h => h.Address)
+                .Include(h => h.Invitations)
                 .Where(h => h.StartDate <= date && date <= h.EndDate)
-                .Join(_context.Invitations,
-                      holiday => holiday.Id,
-                      invitation => invitation.HolidayId,
-                     (holiday, invitation) => invitation.User)
-                .Distinct()
-                .Count();
+                .SelectMany(h => h.Invitations, (holiday, invitation) => new { holiday.Address.Country, invitation.User })
+                .GroupBy(x => x.Country)
+                .Select(group => new { Country = group.Key, Count = group.Count() })
+                .ToListAsync();
 
-            return Ok(usersOnHolidayCount);
+            return Ok(usersOnHolidayByCountry);
         }
         catch (Exception e)
         {
