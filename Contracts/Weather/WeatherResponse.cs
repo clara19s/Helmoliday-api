@@ -2,4 +2,5 @@
 public record WeatherResponse(
     string Weather,
     double Temperature,
-    double FeelsLike);
+    double FeelsLike,
+    string UrlIcon );

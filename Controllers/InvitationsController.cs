@@ -2,6 +2,8 @@
 using HELMoliday.Data;
 using HELMoliday.Models;
 using HELMoliday.Contracts.Invitation;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace HELMoliday.Controllers;
 [Route("invitations")]
@@ -9,16 +11,19 @@ namespace HELMoliday.Controllers;
 public class InvitationsController : ControllerBase
 {
     private readonly HELMolidayContext _context;
+    private readonly UserManager<User> _userManager;
 
-    public InvitationsController(HELMolidayContext context)
+
+    public InvitationsController(HELMolidayContext context, UserManager<User> userManager)
     {
         _context = context;
+        _userManager = userManager;
     }
 
-
-    // POST: api/Invitations
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-    [HttpPost]
+    
+       // POST: api/Invitations
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPost]
     public async Task<ActionResult<Invitation>> PostInvitation([FromBody] InvitationRequest invitation)
     {
         if (_context.Invitations == null)
@@ -52,14 +57,29 @@ public class InvitationsController : ControllerBase
         {
             return NotFound();
         }
-        var invitation = await _context.Invitations.FindAsync(id);
+        var user =  await _userManager.GetUserAsync(HttpContext.User);
+
+        var invitations = _context.Invitations.Where(i => i.HolidayId == id);
+        var invitation = invitations.Where (i => i.UserId == user.Id).FirstOrDefault();
+        
         if (invitation == null)
         {
             return NotFound();
         }
+       
+        if (invitations.Count() == 1)
+        {
+            _context.Invitations.Remove(invitation);
+            var holiday = _context.Holidays.Where(h => h.Id == id).FirstOrDefault();
+            _context.Holidays.Remove(holiday);
+        }
+        else
+        {
+            _context.Invitations.Remove(invitation);
+        }
 
-        _context.Invitations.Remove(invitation);
         await _context.SaveChangesAsync();
+
 
         return NoContent();
     }

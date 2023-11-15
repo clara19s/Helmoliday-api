@@ -28,7 +28,7 @@ public class OpenWeatherMapService : IWeatherService
 
             var weather = await weatherResponse.Content.ReadFromJsonAsync<OpenWeatherMapWeatherResponse>();
 
-            return new WeatherResponse(weather!.Description[0].Weather, weather!.Main.Temp, weather.Main.FeelsLike);
+            return new WeatherResponse(weather!.Description[0].Weather, weather!.Main.Temp, weather.Main.FeelsLike, $"https://openweathermap.org/img/wn/{ weather!.Description[0].Icon}@2x.png");
         }
         catch (HttpRequestException ex)
         {
@@ -60,6 +60,8 @@ public class OpenWeatherMapService : IWeatherService
         [JsonPropertyName("main")] public string Weather { get; set; }
 
         [JsonPropertyName("description")] public string Description { get; set; }
+
+        [JsonPropertyName("icon")] public string Icon { get; set; }
     }
 
     private class OpenWeatherMapMain
