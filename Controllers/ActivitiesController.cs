@@ -43,8 +43,8 @@ namespace HELMoliday.Controllers
                     a.Id,
                     a.Name,
                     a.Description,
-                    a.StartDate.ToString(),
-                    a.EndDate.ToString(),
+                    a.StartDate.ToString("yyyy-MM-dd HH:ss"),
+                    a.EndDate.ToString("yyyy-MM-dd HH:ss"),
                     AddressConverter.CreateFromModel(a.Address)))
                 .ToList());
         }
@@ -68,8 +68,8 @@ namespace HELMoliday.Controllers
                 activity.Id,
                 activity.Name,
                 activity.Description,
-                activity.StartDate.ToString(),
-                activity.EndDate.ToString(),
+                activity.StartDate.ToString("yyyy-MM-dd HH:ss"),
+                activity.EndDate.ToString("yyyy-MM-dd HH:ss"),
                 AddressConverter.CreateFromModel(activity.Address));
         }
 
