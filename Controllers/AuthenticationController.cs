@@ -13,11 +13,13 @@ namespace HELMoliday.Controllers;
 [AllowAnonymous]
 public class AuthenticationController : ControllerBase
 {
+    private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
 
-    public AuthenticationController(UserManager<User> userManager, IJwtTokenGenerator jwtTokenGenerator)
+    public AuthenticationController(SignInManager<User> signInManager, UserManager<User> userManager, IJwtTokenGenerator jwtTokenGenerator)
     {
+        _signInManager = signInManager;
         _userManager = userManager;
         _jwtTokenGenerator = jwtTokenGenerator;
     }
