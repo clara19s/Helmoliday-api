@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HELMoliday.Services.Calendar;
+using System.ComponentModel.DataAnnotations;
 
 namespace HELMoliday.Models;
 
-public partial class Holiday
+public partial class Holiday : IEvent
 {
     public Guid Id { get; set; }
 
