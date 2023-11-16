@@ -1,10 +1,13 @@
 ﻿using HELMoliday.Contracts.Authentication;
 using HELMoliday.Models;
+using HELMoliday.Options;
+using HELMoliday.Services.Email;
 using HELMoliday.Services.JwtToken;
 using HELMoliday.Services.OAuth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using MimeKit;
 
 namespace HELMoliday.Controllers;
 
@@ -13,15 +16,17 @@ namespace HELMoliday.Controllers;
 [AllowAnonymous]
 public class AuthenticationController : ControllerBase
 {
-    private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly ILogger _logger;
 
-    public AuthenticationController(SignInManager<User> signInManager, UserManager<User> userManager, IJwtTokenGenerator jwtTokenGenerator)
+    public AuthenticationController(UserManager<User> userManager, IJwtTokenGenerator jwtTokenGenerator, ILogger Logger)
     {
-        _signInManager = signInManager;
+   
         _userManager = userManager;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _logger = Logger;
+
     }
 
     [HttpPost("login")]
@@ -30,12 +35,14 @@ public class AuthenticationController : ControllerBase
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
         {
+           
             return BadRequest("User not found.");
         }
 
         var signinResult = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!signinResult)
         {
+            _logger.LogInformation($"La tentative de connexion au compte de l'utilisateur {user.Id} a échoué.");
             return BadRequest("Invalid credentials.");
         }
 
@@ -46,15 +53,16 @@ public class AuthenticationController : ControllerBase
             request.Email,
             _jwtTokenGenerator.GenerateToken(user)
         );
-
+        _logger.LogInformation($"La connexion au compte de l'utilisateur {user.Id} a été réussie.");
         return Ok(authResponse);
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, [FromServices] IEmailSender emailSender)
     {
         if (await _userManager.FindByEmailAsync(request.Email) is not null)
         {
+            _logger.LogInformation($"La création du compte pour l'utilisateur {user.Id} a échoué. Le compte existe déjà.");
             return BadRequest(new { message = "User already exists" });
         }
 
@@ -79,6 +87,14 @@ public class AuthenticationController : ControllerBase
             user.Email,
             _jwtTokenGenerator.GenerateToken(user)
         );
+        MessageAddress email = new MessageAddress(user.FirstName, user.Email);
+        Message message = new Message()
+        {
+            To = new List<MessageAddress> { email },
+            Subject = "Création de compte",
+            Content = " Cher(e) client(e), <br><br> Félicitations ! Votre compte Helmoliday a été créé avec succès. <br><br> L'équipe Helmoliday "
+        };
+        emailSender.SendEmailAsync(message);
 
         return Ok(authResponse);
     }

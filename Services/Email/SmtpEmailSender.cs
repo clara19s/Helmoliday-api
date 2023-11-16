@@ -23,10 +23,11 @@ public class SmtpEmailSender : IEmailSender
     {
         var emailMessage = new MimeMessage();
         emailMessage.From.Add(new MailboxAddress(_emailConfig.FromName, _emailConfig.FromEmailAddress));
-        emailMessage.To.AddRange(message.To);
-        emailMessage.ReplyTo.AddRange(message.To);
+        var to = message.To.Select(x => new MailboxAddress(x.Name, x.EmailAddress));
+        emailMessage.To.AddRange(to);
+        emailMessage.ReplyTo.AddRange(to);
         emailMessage.Subject = message.Subject;
-        emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Text) { Text = message.Content };
+        emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = message.Content };
         return emailMessage;
     }
     private void Send(MimeMessage mailMessage)

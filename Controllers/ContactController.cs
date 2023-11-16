@@ -15,7 +15,12 @@ public class ContactController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Post([FromBody] ContactRequest request, [FromServices] IEmailSender emailSender)
     {
-        var message = new Message(new List<MessageAddress> { new MessageAddress(request.FullName, request.Email) }, request.Subject, request.Message);
+        var message = new Message()
+        {
+            To = new List<MessageAddress> { new MessageAddress(request.FullName, request.Email) },
+            Subject = request.Subject,
+            Content = request.Message
+        };
         await emailSender.SendEmailAsync(message);
         return CreatedAtAction(nameof(Post), request);
     }
