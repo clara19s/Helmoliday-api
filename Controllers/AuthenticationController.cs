@@ -62,7 +62,7 @@ public class AuthenticationController : ControllerBase
     {
         if (await _userManager.FindByEmailAsync(request.Email) is not null)
         {
-            _logger.LogInformation($"La création du compte pour l'utilisateur {user.Id} a échoué. Le compte existe déjà.");
+            _logger.LogInformation($"La création du compte pour l'utilisateur {request.Email} a échoué. Le compte existe déjà.");
             return BadRequest(new { message = "User already exists" });
         }
 
