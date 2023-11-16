@@ -1,6 +1,7 @@
 using HELMoliday.Data;
 using HELMoliday.Models;
 using HELMoliday.Options;
+using HELMoliday.Services.Email;
 using HELMoliday.Services.JwtToken;
 using HELMoliday.Services.OAuth;
 using HELMoliday.Services.Weather;
@@ -80,6 +81,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("CorsPolicy", policy =>
     {
         policy = policy.WithOrigins(
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5173",
             "http://localhost:5173",
             "https://localhost:5173",
             "https://panoramix.cg.helmo.be",
@@ -97,6 +100,13 @@ builder.Services.AddIdentityCore<User>(options =>
 })
     .AddRoles<Role>()
     .AddEntityFrameworkStores<HELMolidayContext>();
+
+// Add Email Service.
+var emailConfig = configuration
+        .GetSection("EmailConfiguration")
+        .Get<EmailSettings>();
+builder.Services.AddSingleton(emailConfig);
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 // Add Weather Service.
 builder.Services.AddHttpClient("weather");
