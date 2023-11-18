@@ -35,16 +35,31 @@ public class AuthenticationController : ControllerBase
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
         {
-           
             return BadRequest("User not found.");
+        }
+
+        if (user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow)
+        {
+            _logger.LogInformation($"La tentative de connexion au compte de l'utilisateur {user.Id} a échoué. Le compte est verrouillé.");
+            return BadRequest("Account locked.");
         }
 
         var signinResult = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!signinResult)
         {
+            user.AccessFailedCount++;
+            if (user.AccessFailedCount > 3)
+            {
+                user.LockoutEnabled = true;
+                user.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(5 ^ user.AccessFailedCount);
+            }
+            await _userManager.UpdateAsync(user);
             _logger.LogInformation($"La tentative de connexion au compte de l'utilisateur {user.Id} a échoué.");
             return BadRequest("Invalid credentials.");
         }
+
+        user.AccessFailedCount = 0;
+        _ = _userManager.UpdateAsync(user);
 
         var authResponse = new AuthResponse(
             user.Id,
