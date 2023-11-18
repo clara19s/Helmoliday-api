@@ -18,9 +18,9 @@ public class AuthenticationController : ControllerBase
 {
     private readonly UserManager<User> _userManager;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
-    private readonly ILogger _logger;
+    private readonly ILogger<AuthenticationController> _logger;
 
-    public AuthenticationController(UserManager<User> userManager, IJwtTokenGenerator jwtTokenGenerator, ILogger Logger)
+    public AuthenticationController(UserManager<User> userManager, IJwtTokenGenerator jwtTokenGenerator, ILogger<AuthenticationController> Logger)
     {
    
         _userManager = userManager;
