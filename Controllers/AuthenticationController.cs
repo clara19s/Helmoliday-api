@@ -1,4 +1,5 @@
 ﻿using HELMoliday.Contracts.Authentication;
+using HELMoliday.Data;
 using HELMoliday.Models;
 using HELMoliday.Options;
 using HELMoliday.Services.Email;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MimeKit;
+using PusherServer;
 
 namespace HELMoliday.Controllers;
 
@@ -19,14 +21,14 @@ public class AuthenticationController : ControllerBase
     private readonly UserManager<User> _userManager;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly ILogger<AuthenticationController> _logger;
+    private readonly HELMolidayContext _context;
 
-    public AuthenticationController(UserManager<User> userManager, IJwtTokenGenerator jwtTokenGenerator, ILogger<AuthenticationController> Logger)
+    public AuthenticationController(UserManager<User> userManager, IJwtTokenGenerator jwtTokenGenerator, ILogger<AuthenticationController> logger, HELMolidayContext context)
     {
-   
         _userManager = userManager;
         _jwtTokenGenerator = jwtTokenGenerator;
-        _logger = Logger;
-
+        _logger = logger;
+        _context = context;
     }
 
     [HttpPost("login")]
@@ -110,6 +112,21 @@ public class AuthenticationController : ControllerBase
             Content = " Cher(e) client(e), <br><br> Félicitations ! Votre compte Helmoliday a été créé avec succès. <br><br> L'équipe Helmoliday "
         };
         emailSender.SendEmailAsync(message);
+
+        var options = new PusherOptions
+        {
+            Cluster = "eu",
+            Encrypted = false
+        };
+
+        // TODO: Get from config
+        var pusher = new Pusher(
+          "1700454",
+          "c79fa94e85416eeb4f1e",
+          "bca1b2adb1b72d81f3f3",
+          options);
+
+        pusher.TriggerAsync("stats", "update:userCount", _context.Users.Count());
 
         return Ok(authResponse);
     }

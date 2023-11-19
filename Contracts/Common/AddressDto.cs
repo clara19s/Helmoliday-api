@@ -12,7 +12,7 @@ namespace HELMoliday.Contracts.Common
 
     public class AddressConverter
     {
-        public static Address CreateFromDto(AddressDto addressDto) => new Address
+        public static Address CreateFromDto(AddressDto addressDto) => new()
         {
             Street = addressDto.Street,
             StreetNumber = addressDto.StreetNumber,
@@ -21,12 +21,12 @@ namespace HELMoliday.Contracts.Common
             PostalCode = addressDto.PostalCode,
         };
 
-        public static AddressDto CreateFromModel(Address model) => new AddressDto(
+        public static AddressDto CreateFromModel(Address model) => new(
              model.Street,
              model.StreetNumber.ToString(),
+             model.PostalCode,
              model.City,
-             model.Country,
-             model.PostalCode
+             model.Country
         );
     }
 }

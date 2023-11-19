@@ -335,7 +335,8 @@ public class HolidaysController : ControllerBase
             data: new
             {
                 sentAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-                data = new {
+                data = new
+                {
                     clientId = request.ClientId,
                     text = request.Text,
                     images = Array.Empty<string>()

@@ -6,6 +6,7 @@ using HELMoliday.Contracts.Account;
 using HELMoliday.Contracts.Authentication;
 using HELMoliday.Services.JwtToken;
 using HELMoliday.Contracts.User;
+using PusherServer;
 
 namespace HELMoliday.Controllers
 {
@@ -102,6 +103,21 @@ namespace HELMoliday.Controllers
             {
                 return Problem("User couldn't be deleted.");
             }
+
+            var options = new PusherOptions
+            {
+                Cluster = "eu",
+                Encrypted = false
+            };
+
+            // TODO: Get from config
+            var pusher = new Pusher(
+              "1700454",
+              "c79fa94e85416eeb4f1e",
+              "bca1b2adb1b72d81f3f3",
+              options);
+
+            pusher.TriggerAsync("stats", "update:userCount", _context.Users.Count());
 
             return NoContent();
         }
