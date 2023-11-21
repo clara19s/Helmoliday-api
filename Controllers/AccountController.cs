@@ -7,6 +7,10 @@ using HELMoliday.Contracts.Authentication;
 using HELMoliday.Services.JwtToken;
 using HELMoliday.Contracts.User;
 using PusherServer;
+using HELMoliday.Contracts.Holiday;
+using HELMoliday.Services.Weather;
+using Microsoft.EntityFrameworkCore;
+using HELMoliday.Services.Cal;
 
 namespace HELMoliday.Controllers
 {
@@ -63,6 +67,8 @@ namespace HELMoliday.Controllers
 
             return Ok(new AuthResponse(user.Id, user.FirstName, user.LastName, user.Email, _jwtTokenGenerator.GenerateToken(user)));
         }
+
+        
 
         [Route("password")]
         [HttpPut()]
@@ -121,5 +127,7 @@ namespace HELMoliday.Controllers
 
             return NoContent();
         }
+
+
     }
 }

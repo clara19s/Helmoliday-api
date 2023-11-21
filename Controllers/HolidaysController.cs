@@ -9,6 +9,8 @@ using HELMoliday.Contracts.Common;
 using HELMoliday.Services.Weather;
 using HELMoliday.Contracts.User;
 using PusherServer;
+using HELMoliday.Services.Cal;
+using System.Text;
 
 namespace HELMoliday.Controllers;
 [Route("holidays")]
@@ -178,6 +180,27 @@ public class HolidaysController : ControllerBase
 
         return Ok(holidayResponse);
     }
+
+    // GET: api/calendar
+    [HttpGet("{id}/calendar")]
+    public async Task<ActionResult> GetCalendar(Guid id, [FromServices] ICalendarService calendarService)
+    {
+       
+            var holiday = _context.Holidays.Where(h => h.Id == id).Include(h => h.Activities).FirstOrDefault();
+
+            var events = new List<IEvent>();
+
+            events.Add(holiday);
+            foreach (var activity in holiday.Activities)
+            {
+                events.Add(activity);
+            }
+
+            var calendar = calendarService.CreateIcs(events);
+            byte[] data = Encoding.UTF8.GetBytes(calendar);
+            return File(data, "text/calendar", "event.ics");
+       
+            }
 
     // GET: api/Holidays/5
     [HttpGet("{id}/weather")]

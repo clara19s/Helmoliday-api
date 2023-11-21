@@ -1,10 +1,12 @@
 using HELMoliday.Data;
 using HELMoliday.Models;
 using HELMoliday.Options;
+using HELMoliday.Services.Cal;
 using HELMoliday.Services.Email;
 using HELMoliday.Services.JwtToken;
 using HELMoliday.Services.OAuth;
 using HELMoliday.Services.Weather;
+using Ical.Net.CalendarComponents;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -118,6 +120,9 @@ var emailConfig = configuration
         .Get<EmailSettings>();
 builder.Services.AddSingleton(emailConfig);
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+// Add calendar service 
+builder.Services.AddScoped<ICalendarService, CalendarService>();
 
 // Add Weather Service.
 builder.Services.AddHttpClient("weather");

@@ -1,7 +1,7 @@
 ﻿using HELMoliday.Models;
 using System.ComponentModel.DataAnnotations;
 
-namespace HELMoliday.Services.Calendar
+namespace HELMoliday.Services.Cal
 {
     public interface IEvent
     {
