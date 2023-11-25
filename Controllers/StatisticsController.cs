@@ -39,6 +39,7 @@ public class StatisticsController : ControllerBase
                 .SelectMany(h => h.Invitations, (holiday, invitation) => new { holiday.Address.Country, invitation.User })
                 .GroupBy(x => x.Country)
                 .Select(group => new { Country = group.Key, Count = group.Count() })
+                .Distinct()
                 .ToListAsync();
 
             return Ok(usersOnHolidayByCountry);

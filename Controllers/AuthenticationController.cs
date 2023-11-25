@@ -111,22 +111,8 @@ public class AuthenticationController : ControllerBase
             Subject = "Création de compte",
             Content = " Cher(e) client(e), <br><br> Félicitations ! Votre compte Helmoliday a été créé avec succès. <br><br> L'équipe Helmoliday "
         };
-        emailSender.SendEmailAsync(message);
-
-        var options = new PusherOptions
-        {
-            Cluster = "eu",
-            Encrypted = false
-        };
-
-        // TODO: Get from config
-        var pusher = new Pusher(
-          "1700454",
-          "c79fa94e85416eeb4f1e",
-          "bca1b2adb1b72d81f3f3",
-          options);
-
-        pusher.TriggerAsync("stats", "update:userCount", _context.Users.Count());
+        _ = emailSender.SendEmailAsync(message);
+        _ = NotifyStats();
 
         return Ok(authResponse);
     }
@@ -162,6 +148,7 @@ public class AuthenticationController : ControllerBase
                 _logger.LogError($"Failed to create user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
                 return BadRequest("Failed to create user.");
             }
+            _ = NotifyStats();
         }
 
         var authResponse = new AuthResponse(
@@ -174,5 +161,24 @@ public class AuthenticationController : ControllerBase
 
         _logger.LogInformation($"User {user.Id} logged in via Google.");
         return Ok(authResponse);
+    }
+
+    private Task NotifyStats()
+    {
+        var options = new PusherOptions
+        {
+            Cluster = "eu",
+            Encrypted = false
+        };
+
+        // TODO: Get from config
+        var pusher = new Pusher(
+          "1700454",
+          "c79fa94e85416eeb4f1e",
+          "bca1b2adb1b72d81f3f3",
+          options);
+
+        pusher.TriggerAsync("stats", "update:userCount", _context.Users.Count());
+        return Task.CompletedTask;
     }
 }
