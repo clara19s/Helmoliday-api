@@ -1,10 +1,10 @@
-﻿using HELMoliday.Contracts.Authentication;
+﻿using Google.Apis.Auth;
+using HELMoliday.Contracts.Authentication;
 using HELMoliday.Data;
 using HELMoliday.Models;
 using HELMoliday.Options;
 using HELMoliday.Services.Email;
 using HELMoliday.Services.JwtToken;
-using HELMoliday.Services.OAuth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -131,41 +131,39 @@ public class AuthenticationController : ControllerBase
         return Ok(authResponse);
     }
 
-    [Route("oauth/google")]
-    [HttpPost]
-    public async Task<IActionResult> LoginWithGoogle([FromBody] OAuthRequest request, [FromServices] GoogleOAuthService authService)
+    [HttpPost("oauth/google")]
+    public async Task<IActionResult> GoogleLogin([FromBody] OAuthTokenRequest token)
     {
-        // On convertir le jeton d'autorisation en jeton d'accès.
-        var accessToken = await authService.GetTokenAsync(request.AuthorizationCode);
+        GoogleJsonWebSignature.Payload validatedToken;
+        try
+        {
+            validatedToken = await GoogleJsonWebSignature.ValidateAsync(token.Token);
+        }
+        catch (InvalidJwtException ex)
+        {
+            _logger.LogError($"Invalid Google JWT: {ex.Message}");
+            return Unauthorized("Invalid token.");
+        }
 
-        if (accessToken == null)
-            return BadRequest();
-
-        // On récupère les informations de l'utilisateur liées au jeton d'accès.
-        var userInfo = await authService.GetUserInfoAsync(accessToken);
-
-        if (userInfo == null)
-            return BadRequest();
-
-        var user = await _userManager.FindByEmailAsync(userInfo.Email);
-
-        if (user == null) // Si l'utilisateur n'existe pas, alors on le crée
+        var user = await _userManager.FindByEmailAsync(validatedToken.Email);
+        if (user == null)
         {
             user = new User
             {
-                UserName = userInfo.Email,
-                Email = userInfo.Email,
-                FirstName = userInfo.GivenName,
-                LastName = userInfo.FamilyName
+                Email = validatedToken.Email,
+                UserName = validatedToken.Email,
+                FirstName = validatedToken.GivenName,
+                LastName = validatedToken.FamilyName
             };
-            var signUpResult = await _userManager.CreateAsync(user);
-            if (!signUpResult.Succeeded)
+
+            var createResult = await _userManager.CreateAsync(user);
+            if (!createResult.Succeeded)
             {
-                return BadRequest("User could not be created.");
+                _logger.LogError($"Failed to create user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+                return BadRequest("Failed to create user.");
             }
         }
 
-        // Sinon, l'utilisateur existe et on peut lui retourner une AuthResponse
         var authResponse = new AuthResponse(
             user.Id,
             user.FirstName,
@@ -173,6 +171,8 @@ public class AuthenticationController : ControllerBase
             user.Email,
             _jwtTokenGenerator.GenerateToken(user)
         );
+
+        _logger.LogInformation($"User {user.Id} logged in via Google.");
         return Ok(authResponse);
     }
 }

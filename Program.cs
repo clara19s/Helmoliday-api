@@ -3,7 +3,6 @@ using HELMoliday.Models;
 using HELMoliday.Options;
 using HELMoliday.Services.Email;
 using HELMoliday.Services.JwtToken;
-using HELMoliday.Services.OAuth;
 using HELMoliday.Services.Weather;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -18,8 +17,6 @@ var configuration = builder.Configuration;
 
 // Add services to the container.
 builder.Services.AddControllers();
-
-builder.Services.AddScoped<GoogleOAuthService>();
 
 // Add Swagger.
 builder.Services.AddEndpointsApiExplorer();
