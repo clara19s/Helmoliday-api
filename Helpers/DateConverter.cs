@@ -1,4 +1,6 @@
-﻿namespace HELMoliday.Helpers
+﻿using HELMoliday.Exceptions;
+
+namespace HELMoliday.Helpers
 {
     public class DateConverter
     {
@@ -14,7 +16,7 @@
             }
             else
             {
-                throw new ArgumentException("La chaîne de caractères n'est pas au format valide (yyyy-MM-dd HH:ss).");
+                throw new DateFormatException();
             }
         }
     }

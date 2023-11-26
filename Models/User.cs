@@ -23,5 +23,4 @@ public class User : IdentityUser<Guid>
     public virtual ICollection<Invitation> Invitations { get; set; } = new List<Invitation>();
 
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
-
 }

@@ -1,14 +1,14 @@
-﻿using Google.Apis.Auth;
-using HELMoliday.Contracts.Authentication;
+﻿using HELMoliday.Contracts.Authentication;
 using HELMoliday.Data;
+using HELMoliday.Exceptions;
 using HELMoliday.Models;
 using HELMoliday.Options;
 using HELMoliday.Services.Email;
 using HELMoliday.Services.JwtToken;
+using HELMoliday.Services.OAuth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using MimeKit;
 using PusherServer;
 
 namespace HELMoliday.Controllers;
@@ -37,13 +37,13 @@ public class AuthenticationController : ControllerBase
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
         {
-            return BadRequest("User not found.");
+            throw new NotFoundException("Utilisateur non trouvé");
         }
 
         if (user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow)
         {
             _logger.LogInformation($"La tentative de connexion au compte de l'utilisateur {user.Id} a échoué. Le compte est verrouillé.");
-            return BadRequest("Account locked.");
+            throw new AccountLockedOutException();
         }
 
         var signinResult = await _userManager.CheckPasswordAsync(user, request.Password);
@@ -57,7 +57,7 @@ public class AuthenticationController : ControllerBase
             }
             await _userManager.UpdateAsync(user);
             _logger.LogInformation($"La tentative de connexion au compte de l'utilisateur {user.Id} a échoué.");
-            return BadRequest("Invalid credentials.");
+            throw new InvalidCredentialsException();
         }
 
         user.AccessFailedCount = 0;
@@ -80,7 +80,7 @@ public class AuthenticationController : ControllerBase
         if (await _userManager.FindByEmailAsync(request.Email) is not null)
         {
             _logger.LogInformation($"La création du compte pour l'utilisateur {request.Email} a échoué. Le compte existe déjà.");
-            return BadRequest(new { message = "User already exists" });
+            throw new EmailAlreadyTakenException();
         }
 
         var user = new User
@@ -104,42 +104,40 @@ public class AuthenticationController : ControllerBase
             user.Email,
             _jwtTokenGenerator.GenerateToken(user)
         );
-        MessageAddress email = new MessageAddress(user.FirstName, user.Email);
-        Message message = new Message()
+        MessageAddress email = new(user.FirstName, user.Email);
+        Message message = new()
         {
             To = new List<MessageAddress> { email },
             Subject = "Création de compte",
-            Content = " Cher(e) client(e), <br><br> Félicitations ! Votre compte Helmoliday a été créé avec succès. <br><br> L'équipe Helmoliday "
+            Content = " Cher(e) client(e),<br><br>Félicitations ! Votre compte Helmoliday a été créé avec succès.<br><br>L'équipe Helmoliday "
         };
-        _ = emailSender.SendEmailAsync(message);
-        _ = NotifyStats();
+        _ = Task.Run(async () =>
+            {
+                await emailSender.SendEmailAsync(message);
+            });
+        _ = Task.Run(async () =>
+        {
+            await NotifyStats();
+        });
 
         return Ok(authResponse);
     }
 
-    [HttpPost("oauth/google")]
-    public async Task<IActionResult> GoogleLogin([FromBody] OAuthTokenRequest token)
+    [HttpPost("oauth/{platform}")]
+    public async Task<IActionResult> OAuthCallback([FromRoute] string platform, [FromBody] OAuthTokenRequest token, [FromServices] OAuthStrategyFactory authStrategyFactory)
     {
-        GoogleJsonWebSignature.Payload validatedToken;
-        try
-        {
-            validatedToken = await GoogleJsonWebSignature.ValidateAsync(token.Token);
-        }
-        catch (InvalidJwtException ex)
-        {
-            _logger.LogError($"Invalid Google JWT: {ex.Message}");
-            return Unauthorized("Invalid token.");
-        }
+        IOAuthStrategy strategy = authStrategyFactory.GetStrategy(platform);
+        var userInfo = await strategy.AuthenticateAsync(token.Token);
 
-        var user = await _userManager.FindByEmailAsync(validatedToken.Email);
+        var user = await _userManager.FindByEmailAsync(userInfo.Email);
         if (user == null)
         {
             user = new User
             {
-                Email = validatedToken.Email,
-                UserName = validatedToken.Email,
-                FirstName = validatedToken.GivenName,
-                LastName = validatedToken.FamilyName
+                Email = userInfo.Email,
+                UserName = userInfo.Email,
+                FirstName = userInfo.FirstName,
+                LastName = userInfo.LastName
             };
 
             var createResult = await _userManager.CreateAsync(user);

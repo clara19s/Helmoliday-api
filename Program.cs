@@ -1,8 +1,11 @@
 using HELMoliday.Data;
+using HELMoliday.Filters;
 using HELMoliday.Models;
 using HELMoliday.Options;
 using HELMoliday.Services.Email;
 using HELMoliday.Services.JwtToken;
+using HELMoliday.Services.OAuth;
+using HELMoliday.Services.OAuth.Strategies;
 using HELMoliday.Services.Weather;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +19,10 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<HttpResponseExceptionFilter>();
+});
 
 // Add Swagger.
 builder.Services.AddEndpointsApiExplorer();
@@ -91,7 +97,6 @@ builder.Services.AddCors(options =>
 });
 
 // log
-
 var logger = new LoggerConfiguration()
   .ReadFrom.Configuration(builder.Configuration)
   .Enrich.FromLogContext()
@@ -108,6 +113,10 @@ builder.Services.AddIdentityCore<User>(options =>
 })
     .AddRoles<Role>()
     .AddEntityFrameworkStores<HELMolidayContext>();
+
+builder.Services.AddScoped<GoogleOAuthStrategy>();
+builder.Services.AddScoped<LinkedInOAuthStrategy>();
+builder.Services.AddScoped<OAuthStrategyFactory>();
 
 // Add Email Service.
 var emailConfig = configuration
@@ -127,6 +136,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseExceptionHandler("/error-development");
+}
+else
+{
+    app.UseExceptionHandler("/error");
 }
 
 app.UseHttpsRedirection();

@@ -7,6 +7,7 @@ using HELMoliday.Contracts.Authentication;
 using HELMoliday.Services.JwtToken;
 using HELMoliday.Contracts.User;
 using PusherServer;
+using HELMoliday.Exceptions;
 
 namespace HELMoliday.Controllers
 {
@@ -51,7 +52,7 @@ namespace HELMoliday.Controllers
 
             if (dto.Email != user.Email && await _userManager.FindByEmailAsync(dto.Email) is not null)
             {
-                return BadRequest(new { error = "E-mail already in use." });
+                throw new EmailAlreadyTakenException();
             }
 
             user.Email = dto.Email;
@@ -117,7 +118,7 @@ namespace HELMoliday.Controllers
               "bca1b2adb1b72d81f3f3",
               options);
 
-            pusher.TriggerAsync("stats", "update:userCount", _context.Users.Count());
+            _ = pusher.TriggerAsync("stats", "update:userCount", _context.Users.Count());
 
             return NoContent();
         }

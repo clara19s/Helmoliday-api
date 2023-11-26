@@ -9,6 +9,7 @@ using HELMoliday.Contracts.Common;
 using HELMoliday.Services.Weather;
 using HELMoliday.Contracts.User;
 using PusherServer;
+using HELMoliday.Exceptions;
 
 namespace HELMoliday.Controllers;
 [Route("holidays")]
@@ -144,21 +145,11 @@ public class HolidaysController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<HolidayResponse>> GetHoliday(Guid id)
     {
-        if (_context.Holidays == null)
-        {
-            return NotFound();
-        }
+        var holiday = GetHolidayIfExist(id,
+            query => query.Include(h => h.Invitations).ThenInclude(i => i.User),
+            query => query.Include(h => h.Activities));
 
-        var holiday = await _context.Holidays
-            .Include(h => h.Invitations)
-                .ThenInclude(i => i.User)
-            .Include(h => h.Activities)
-            .FirstOrDefaultAsync(h => h.Id == id);
-
-        if (holiday == null)
-        {
-            return NotFound();
-        }
+        CheckIfIsGuest(holiday);
 
         var listGuests = holiday.Invitations.Select(i => i.User).ToList();
         var listActivities = holiday.Activities.Select(u => u.Id.ToString());
@@ -185,10 +176,12 @@ public class HolidaysController : ControllerBase
     {
         try
         {
-            var holiday = _context.Holidays.Where(h => h.Id == id).FirstOrDefault();
+            var holiday = GetHolidayIfExist(id,
+                query => query.Include(h => h.Invitations));
+            CheckIfIsGuest(holiday);
             var city = holiday.Address.City;
             var weather = await _weatherService.GetWeatherForCityAsync(city);
-            return weather is null ? NotFound() : Ok(weather);
+            return weather is null ? NotFound("Aucune donnée météorologique n'a été trouvée pour cette période de vacances") : Ok(weather);
         }
         catch (Exception ex)
         {
@@ -202,17 +195,9 @@ public class HolidaysController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> PutHoliday(Guid id, HolidayRequest holiday)
     {
-        if (holiday == null)
-        {
-            return NotFound(new { error = "Holiday not found." });
-        }
-
-        var holidayBd = await _context.Holidays.FindAsync(id);
-
-        if (holidayBd == null)
-        {
-            return NotFound(new { error = "Holiday not found." });
-        }
+        var holidayBd = GetHolidayIfExist(id,
+            query => query.Include(h => h.Invitations));
+        CheckIfIsGuest(holidayBd);
 
         holidayBd.Description = holiday.Description;
         holidayBd.Name = holiday.Name;
@@ -227,13 +212,12 @@ public class HolidaysController : ControllerBase
     }
 
     // POST: api/Holidays
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
     public async Task<ActionResult<Holiday>> PostHoliday(HolidayRequest holidayDto)
     {
         if (_context.Holidays == null)
         {
-            return Problem("Entity set 'HELMolidayContext.Holidays' is null.");
+            return NotFound();
         }
         var holiday = new Holiday
         {
@@ -264,15 +248,9 @@ public class HolidaysController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteHoliday(Guid id)
     {
-        if (_context.Holidays == null)
-        {
-            return NotFound();
-        }
-        var holiday = await _context.Holidays.FindAsync(id);
-        if (holiday == null)
-        {
-            return NotFound();
-        }
+        var holiday = GetHolidayIfExist(id,
+            query => query.Include(h => h.Invitations));
+        CheckIfIsGuest(holiday);
 
         _context.Holidays.Remove(holiday);
         await _context.SaveChangesAsync();
@@ -283,6 +261,9 @@ public class HolidaysController : ControllerBase
     [HttpPost("{id}/chat/auth")]
     public async Task<ActionResult> ChatAuthentication([FromRoute] Guid id, [FromBody] ChatAuthRequest authRequest)
     {
+        var holiday = GetHolidayIfExist(id,
+            query => query.Include(h => h.Invitations));
+        CheckIfIsGuest(holiday);
         var user = await _userManager.GetUserAsync(HttpContext.User);
         var options = new PusherOptions
         {
@@ -315,6 +296,9 @@ public class HolidaysController : ControllerBase
     [HttpPost("{id}/chat/messages")]
     public async Task<ActionResult> SendMessage([FromRoute] Guid id, [FromBody] ChatMessageRequest request)
     {
+        var holiday = GetHolidayIfExist(id,
+            query => query.Include(h => h.Invitations));
+        CheckIfIsGuest(holiday);
         var user = await _userManager.GetUserAsync(HttpContext.User);
         var options = new PusherOptions
         {
@@ -350,5 +334,36 @@ public class HolidaysController : ControllerBase
                 }
             });
         return Ok();
+    }
+
+    private void CheckIfIsGuest(Holiday holiday)
+    {
+        var userId = Guid.Parse(_userManager.GetUserId(HttpContext.User));
+        if (!holiday.Invitations.Any(i => i.UserId == userId))
+        {
+            throw new ForbiddenAccessException("Vous ne faites pas partie de la période de vacances.");
+        }
+    }
+
+    private Holiday GetHolidayIfExist(Guid id, params Func<IQueryable<Holiday>, IQueryable<Holiday>>[] queryExpressions)
+    {
+        if (_context.Holidays == null)
+        {
+            throw new NotFoundException("Période de vacances non trouvée.");
+        }
+
+        IQueryable<Holiday> query = _context.Holidays;
+
+        foreach (var queryExpression in queryExpressions)
+        {
+            if (queryExpression != null)
+            {
+                query = queryExpression(query);
+            }
+        }
+
+        var holiday = query.FirstOrDefault(h => h.Id == id);
+
+        return holiday ?? throw new NotFoundException("Période de vacances non trouvée.");
     }
 }
