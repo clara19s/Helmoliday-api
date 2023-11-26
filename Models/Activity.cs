@@ -1,4 +1,4 @@
-﻿using HELMoliday.Services.Calendar;
+﻿using HELMoliday.Services.Cal;
 using System.ComponentModel.DataAnnotations;
 
 namespace HELMoliday.Models;

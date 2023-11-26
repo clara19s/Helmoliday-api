@@ -1,4 +1,4 @@
-﻿namespace HELMoliday.Services.Calendar
+﻿namespace HELMoliday.Services.Cal
 {
     public interface ICalendarService
     {
