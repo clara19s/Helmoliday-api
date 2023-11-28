@@ -1,4 +1,5 @@
 ﻿using HELMoliday.Services.Cal;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace HELMoliday.Models;
@@ -28,4 +29,6 @@ public partial class Holiday : IEvent
     public virtual ICollection<Invitation> Invitations { get; set; } = new List<Invitation>();
 
     public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
+
+    public Person ContactPerson { get; set; }
 }

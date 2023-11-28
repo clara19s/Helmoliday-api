@@ -16,6 +16,7 @@ public class OAuthStrategyFactory
         {
             "linkedin" => _serviceProvider.GetRequiredService<LinkedInOAuthStrategy>(),
             "google" => _serviceProvider.GetRequiredService<GoogleOAuthStrategy>(),
+            "facebook" => _serviceProvider.GetRequiredService<FacebookOAuthStrategy>(),
             _ => throw new ArgumentException($"Unsupported platform: {platform}"),
         };
     }

@@ -26,4 +26,17 @@ public class Activity : IEvent
     public Holiday Holiday { get; set; }
 
     public virtual Guid HolidayId { get; set; }
+
+    [Required]
+    public ActivityCategory Category { get; set; }
+}
+
+public enum ActivityCategory
+{
+    Entertainment,
+    Cultural,
+    Sport,
+    Gastronomic,
+    Other
+
 }

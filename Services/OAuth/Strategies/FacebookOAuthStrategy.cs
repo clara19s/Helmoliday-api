@@ -23,26 +23,21 @@ namespace HELMoliday.Services.OAuth.Strategies
         {
             var accessToken = await GetAccessToken(code);
             var userInfo = await GetUserInfo(accessToken.AccessToken);
+            var name = userInfo.Name.Split(" ");
+            var firstname = name[0];
+            var lastname = name[1];
 
             return new UserInfo(
                 userInfo.Email,
-                userInfo.FirstName,
-                userInfo.LastName
+               firstname, 
+               lastname
             );
         }
 
         private async Task<FacebookAccessTokenResponse> GetAccessToken(string code)
         {
-            var formData = new Dictionary<string, string>
-            {
-                { "client_id", "370977798709160" },
-                { "client_secret", "93306bbcba0a87601c97f49426a47fbc" },
-                { "code", code },
-                { "redirect_uri", "http://localhost:5173/oauth/facebook" },
-            };
-
-            var content = new FormUrlEncodedContent(formData);
-            var accessTokenRequest = await _httpClient.PostAsync("https://connect.facebook.net/en_US/sdk.js", content);
+            
+            var accessTokenRequest = await _httpClient.GetAsync($"https://graph.facebook.com/v18.0/oauth/access_token?client_id=370977798709160&redirect_uri=http://localhost:5173/oauth/facebook&client_secret=93306bbcba0a87601c97f49426a47fbc&code={code}");
             accessTokenRequest.EnsureSuccessStatusCode();
 
             var response = await accessTokenRequest.Content.ReadAsStringAsync();
@@ -59,7 +54,7 @@ namespace HELMoliday.Services.OAuth.Strategies
 
         private async Task<FacebookUserResponse> GetUserInfo(string accessToken)
         {
-            var userInfoRequest = await _httpClient.GetAsync($"https://graph.facebook.com/v13.0/me?fields=id,first_name,last_name,email&access_token={accessToken}");
+            var userInfoRequest = await _httpClient.GetAsync($"https://graph.facebook.com/me?fields=name,email&access_token={accessToken}");
             userInfoRequest.EnsureSuccessStatusCode();
 
             var response = await userInfoRequest.Content.ReadAsStringAsync();
@@ -79,6 +74,11 @@ namespace HELMoliday.Services.OAuth.Strategies
             [JsonProperty("access_token")]
             public string AccessToken { get; set; }
 
+         
+             [JsonProperty("token_type")]
+            public string TokenType { get; set; }
+
+
             [JsonProperty("expires_in")]
             public int ExpiresIn { get; set; }
         }
@@ -87,12 +87,9 @@ namespace HELMoliday.Services.OAuth.Strategies
         {
             [JsonProperty("id")]
             public string Id { get; set; }
-
-            [JsonProperty("first_name")]
-            public string FirstName { get; set; }
-
-            [JsonProperty("last_name")]
-            public string LastName { get; set; }
+         
+            [JsonProperty("name")]
+            public string Name { get; set; }
 
             [JsonProperty("email")]
             public string Email { get; set; }

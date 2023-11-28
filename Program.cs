@@ -116,9 +116,12 @@ builder.Services.AddIdentityCore<User>(options =>
     .AddRoles<Role>()
     .AddEntityFrameworkStores<HELMolidayContext>();
 
+// authentification 
+
 builder.Services.AddScoped<GoogleOAuthStrategy>();
 builder.Services.AddScoped<LinkedInOAuthStrategy>();
 builder.Services.AddScoped<OAuthStrategyFactory>();
+builder.Services.AddScoped<FacebookOAuthStrategy>();
 
 // Add Email Service.
 var emailConfig = configuration
