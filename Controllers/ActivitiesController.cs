@@ -140,7 +140,7 @@ public class ActivitiesController : ControllerBase
     [HttpPost("holiday/{holidayId}")]
     public async Task<ActionResult<ActivityResponse>> PostActivity([FromRoute] Guid holidayId, [FromBody] UpsertActivityRequest activityDto)
     {
-        var holiday = await _context.Holidays.FindAsync(holidayId);
+        var holiday = await _context.Holidays.Include(h => h.Invitations ).Where(h => h.Id == holidayId).FirstOrDefaultAsync();
 
         if (holiday == null)
         {
