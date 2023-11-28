@@ -30,5 +30,4 @@ public partial class Holiday : IEvent
 
     public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
 
-    public Person ContactPerson { get; set; }
 }

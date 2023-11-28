@@ -7,4 +7,7 @@ public record ActivityResponse(
     string Description,
     string StartDate,
     string EndDate,
-    AddressDto Address);
+    AddressDto Address,
+     string Category
+   
+    );

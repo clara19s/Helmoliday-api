@@ -52,8 +52,10 @@ public class ActivitiesController : ControllerBase
                 a.Description,
                 a.StartDate.ToString("yyyy-MM-dd HH:ss"),
                 a.EndDate.ToString("yyyy-MM-dd HH:ss"),
-                AddressConverter.CreateFromModel(a.Address)))
-            .ToList());
+                AddressConverter.CreateFromModel(a.Address),
+                a.Category.ToString() 
+                ))
+            .ToList()); ;
     }
 
     // GET: api/Activities/5
@@ -79,7 +81,9 @@ public class ActivitiesController : ControllerBase
             activity.Description,
             activity.StartDate.ToString("yyyy-MM-dd HH:ss"),
             activity.EndDate.ToString("yyyy-MM-dd HH:ss"),
-            AddressConverter.CreateFromModel(activity.Address));
+            AddressConverter.CreateFromModel(activity.Address),
+            activity.Category.ToString()
+            );
     }
 
     [HttpGet("{id}/weather")]
@@ -163,7 +167,9 @@ public class ActivitiesController : ControllerBase
             activity.Description,
             activity.StartDate.ToString(),
             activity.EndDate.ToString(),
-            AddressConverter.CreateFromModel(activity.Address)));
+            AddressConverter.CreateFromModel(activity.Address),
+            activity.Category.ToString()
+            ));
     }
 
     // DELETE: api/Activities/5
