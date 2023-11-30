@@ -129,6 +129,7 @@ public class ActivitiesController : ControllerBase
         activity.StartDate = DateConverter.ConvertStringToDate(activityDto.StartDate);
         activity.EndDate = DateConverter.ConvertStringToDate(activityDto.EndDate);
         activity.Address = AddressConverter.CreateFromDto(activityDto.Address);
+        activity.Category = Enum.Parse<ActivityCategory>(activityDto.Category);
 
         await _context.SaveChangesAsync();
 
@@ -155,7 +156,8 @@ public class ActivitiesController : ControllerBase
             Description = activityDto.Description,
             StartDate = DateConverter.ConvertStringToDate(activityDto.StartDate),
             EndDate = DateConverter.ConvertStringToDate(activityDto.EndDate),
-            Address = AddressConverter.CreateFromDto(activityDto.Address)
+            Address = AddressConverter.CreateFromDto(activityDto.Address),
+            Category = Enum.Parse<ActivityCategory>( activityDto.Category),
         };
 
         holiday.Activities.Add(activity);
