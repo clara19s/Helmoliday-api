@@ -4,6 +4,8 @@ using HELMoliday.Models;
 using HELMoliday.Contracts.Invitation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Internal;
+using HELMoliday.Options;
+using HELMoliday.Services.Email;
 
 namespace HELMoliday.Controllers;
 [Route("invitations")]
@@ -12,12 +14,13 @@ public class InvitationsController : ControllerBase
 {
     private readonly HELMolidayContext _context;
     private readonly UserManager<User> _userManager;
+    private readonly IEmailSender _emailSender;
 
-
-    public InvitationsController(HELMolidayContext context, UserManager<User> userManager)
+    public InvitationsController(HELMolidayContext context, UserManager<User> userManager, IEmailSender emailSender)
     {
         _context = context;
         _userManager = userManager;
+        _emailSender = emailSender;
     }
 
     
@@ -31,6 +34,13 @@ public class InvitationsController : ControllerBase
             return Problem("Entity set 'HELMolidayContext.Invitations'  is null.");
         }
 
+        var holiday = _context.Holidays.Where(h => h.Id == Guid.Parse(invitation.HolidayId)).FirstOrDefault();
+
+        if (holiday == null)
+        {
+            return NotFound("Aucun groupe ne correspond à cet identifiant.");
+        }
+
         var user = _context.Users.Where(u => u.Email == invitation.Email).FirstOrDefault();
 
         if (user == null)
@@ -42,10 +52,19 @@ public class InvitationsController : ControllerBase
         {
             UserId = user.Id,
             HolidayId = Guid.Parse(invitation.HolidayId),
-
         };
         _context.Invitations.Add(invitationModel);
         await _context.SaveChangesAsync();
+
+        MessageAddress email = new(user.FirstName, user.Email);
+        Message message = new()
+        {
+            To = new List<MessageAddress> { email },
+            Subject = $"Vous avez été invité dans le groupe \"{holiday.Name}\"",
+            Content = $"Cher(e) {user.FullName},<br><br>Vous avez une nouvelle invitation pour le groupe {holiday.Name}" // TODO: Changer l'URL pour qu'elle soit dynamique
+        };
+        _emailSender.SendEmailAsync(message);
+
         return NoContent();
     }
 

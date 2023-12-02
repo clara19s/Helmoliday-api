@@ -10,6 +10,8 @@ using HELMoliday.Contracts.Weather;
 using HELMoliday.Models;
 using Microsoft.AspNetCore.Identity;
 using HELMoliday.Exceptions;
+using HELMoliday.Options;
+using HELMoliday.Services.Email;
 
 namespace HELMoliday.Controllers;
 [Route("activities")]
@@ -18,11 +20,13 @@ public class ActivitiesController : ControllerBase
 {
     private readonly HELMolidayContext _context;
     private readonly UserManager<User> _userManager;
+    private readonly IEmailSender _emailSender;
 
-    public ActivitiesController(HELMolidayContext context, UserManager<User> userManager)
+    public ActivitiesController(HELMolidayContext context, UserManager<User> userManager, IEmailSender emailSender)
     {
         _context = context;
         _userManager = userManager;
+        _emailSender = emailSender;
     }
 
     // GET: api/Activities
@@ -66,7 +70,10 @@ public class ActivitiesController : ControllerBase
         {
             return NotFound();
         }
-        var activity = await _context.Activities.Include(a => a.Holiday).ThenInclude(h => h.Invitations).Where(a => a.Id == id).FirstOrDefaultAsync();
+        var activity = await _context.Activities
+            .Include(a => a.Holiday)
+            .ThenInclude(h => h.Invitations)
+            .Where(a => a.Id == id).FirstOrDefaultAsync();
 
         if (activity == null)
         {
@@ -140,7 +147,11 @@ public class ActivitiesController : ControllerBase
     [HttpPost("holiday/{holidayId}")]
     public async Task<ActionResult<ActivityResponse>> PostActivity([FromRoute] Guid holidayId, [FromBody] UpsertActivityRequest activityDto)
     {
-        var holiday = await _context.Holidays.Include(h => h.Invitations ).Where(h => h.Id == holidayId).FirstOrDefaultAsync();
+        var holiday = await _context.Holidays
+            .Include(h => h.Invitations)
+            .ThenInclude(i => i.User)
+            .Where(h => h.Id == holidayId)
+            .FirstOrDefaultAsync();
 
         if (holiday == null)
         {
@@ -160,6 +171,20 @@ public class ActivitiesController : ControllerBase
 
         holiday.Activities.Add(activity);
         await _context.SaveChangesAsync();
+
+        var invitedGuests = activity.Holiday.Invitations.Select(i => i.User).ToList();
+
+        foreach (var guest in invitedGuests)
+        {
+            MessageAddress email = new(guest.FirstName, guest.Email);
+            Message message = new()
+            {
+                To = new List<MessageAddress> { email },
+                Subject = $"[{activity.Holiday.Name}] Ajout d'une nouvelle activité",
+                Content = $"Cher(e) {guest.FullName},<br><br>Une nouvelle activité ({activity.Name}) a été ajoutée au groupe {activity.Holiday.Name}." // TODO: Changer l'URL pour qu'elle soit dynamique
+            };
+            _ = _emailSender.SendEmailAsync(message);
+        }
 
         return CreatedAtAction(nameof(GetActivity), new { id = activity.Id }, new ActivityResponse(
             activity.Id,

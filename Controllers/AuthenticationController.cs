@@ -109,12 +109,9 @@ public class AuthenticationController : ControllerBase
         {
             To = new List<MessageAddress> { email },
             Subject = "Création de compte",
-            Content = " Cher(e) client(e),<br><br>Félicitations ! Votre compte Helmoliday a été créé avec succès.<br><br>L'équipe Helmoliday "
+            Content = "Cher(e) client(e),<br><br>Félicitations ! Votre compte Helmoliday a été créé avec succès.<br><br>L'équipe Helmoliday"
         };
-        _ = Task.Run(async () =>
-            {
-                await emailSender.SendEmailAsync(message);
-            });
+        await emailSender.SendEmailAsync(message);
         _ = Task.Run(async () =>
         {
             await NotifyStats();

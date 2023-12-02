@@ -19,6 +19,7 @@ public class ContactController : ControllerBase
         {
             To = new List<MessageAddress> { new MessageAddress(request.FullName, request.Email) },
             Subject = request.Subject,
+            CarbonCopy = new List<MessageAddress> { new MessageAddress("HELMoliday", "admin@schiltz.dev") },
             Content = request.Message
         };
         await emailSender.SendEmailAsync(message);

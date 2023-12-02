@@ -28,9 +28,10 @@ public class SmtpEmailSender : IEmailSender
         emailMessage.ReplyTo.AddRange(to);
         emailMessage.Subject = message.Subject;
         emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = message.Content };
+        emailMessage.Cc.AddRange(message.CarbonCopy.Select(x => new MailboxAddress(x.Name, x.EmailAddress)));
         return emailMessage;
     }
-    private void Send(MimeMessage mailMessage)
+    private async void Send(MimeMessage mailMessage)
     {
         using var client = new SmtpClient();
         try
@@ -38,7 +39,7 @@ public class SmtpEmailSender : IEmailSender
             client.Connect(_emailConfig.SmtpServer, _emailConfig.Port, SecureSocketOptions.Auto);
             client.AuthenticationMechanisms.Remove("XOAUTH2");
             client.Authenticate(_emailConfig.UserName, _emailConfig.Password);
-            client.Send(mailMessage);
+            await client.SendAsync(mailMessage);
         }
         catch
         {
