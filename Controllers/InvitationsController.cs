@@ -51,7 +51,7 @@ public class InvitationsController : ControllerBase
         var invitationModel = new Invitation
         {
             UserId = user.Id,
-            HolidayId = Guid.Parse(invitation.HolidayId),
+            HolidayId = holiday.Id,
         };
         _context.Invitations.Add(invitationModel);
         await _context.SaveChangesAsync();
