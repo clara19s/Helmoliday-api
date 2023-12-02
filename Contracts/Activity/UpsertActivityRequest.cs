@@ -7,5 +7,4 @@ public record UpsertActivityRequest(
     string StartDate,
     string EndDate,
     AddressDto Address,
-    string Category
-    );
+    string Category);

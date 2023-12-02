@@ -73,6 +73,7 @@ public class ActivitiesController : ControllerBase
         var activity = await _context.Activities
             .Include(a => a.Holiday)
             .ThenInclude(h => h.Invitations)
+            .ThenInclude(i => i.User)
             .Where(a => a.Id == id).FirstOrDefaultAsync();
 
         if (activity == null)
@@ -168,7 +169,7 @@ public class ActivitiesController : ControllerBase
             StartDate = DateConverter.ConvertStringToDate(activityDto.StartDate),
             EndDate = DateConverter.ConvertStringToDate(activityDto.EndDate),
             Address = AddressConverter.CreateFromDto(activityDto.Address),
-            Category = Enum.Parse<ActivityCategory>( activityDto.Category),
+            Category = Enum.Parse<ActivityCategory>(activityDto.Category)
         };
 
         holiday.Activities.Add(activity);
