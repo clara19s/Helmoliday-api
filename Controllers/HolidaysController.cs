@@ -256,9 +256,7 @@ public class HolidaysController : ControllerBase
         var invitation = new Invitation
         {
             UserId = user.Id,
-            HolidayId = holiday.Id,
-            Accepted = true
-
+            HolidayId = holiday.Id
         };
         holiday.Invitations.Add(invitation);
 

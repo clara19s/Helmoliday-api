@@ -10,6 +10,7 @@ public interface IEmailSender
 public class Message
 {
     public List<MessageAddress> To { get; set; }
+    public List<MessageAddress> CarbonCopy { get; set; } = new();
     public string Subject { get; set; }
     public string Content { get; set; }
    

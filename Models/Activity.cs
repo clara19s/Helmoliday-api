@@ -38,5 +38,4 @@ public enum ActivityCategory
     Sport,
     Gastronomic,
     Other
-
 }

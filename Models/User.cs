@@ -20,6 +20,9 @@ public class User : IdentityUser<Guid>
     [Required]
     public string LastName { get; set; }
 
+    [NotMapped]
+    public string FullName => $"{FirstName} {LastName}";
+
     public virtual ICollection<Invitation> Invitations { get; set; } = new List<Invitation>();
 
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
