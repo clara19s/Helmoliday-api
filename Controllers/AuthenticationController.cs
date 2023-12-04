@@ -68,6 +68,7 @@ public class AuthenticationController : ControllerBase
             user.FirstName,
             user.LastName,
             request.Email,
+            ConvertToUrl(user.ProfilePicture),
             _jwtTokenGenerator.GenerateToken(user)
         );
         _logger.LogInformation($"La connexion au compte de l'utilisateur {user.Id} a été réussie.");
@@ -102,6 +103,7 @@ public class AuthenticationController : ControllerBase
             user.FirstName,
             user.LastName,
             user.Email,
+            ConvertToUrl(user.ProfilePicture),
             _jwtTokenGenerator.GenerateToken(user)
         );
         MessageAddress email = new(user.FirstName, user.Email);
@@ -151,6 +153,7 @@ public class AuthenticationController : ControllerBase
             user.FirstName,
             user.LastName,
             user.Email,
+            ConvertToUrl(user.ProfilePicture),
             _jwtTokenGenerator.GenerateToken(user)
         );
 
@@ -175,5 +178,12 @@ public class AuthenticationController : ControllerBase
 
         pusher.TriggerAsync("stats", "update:userCount", _context.Users.Count());
         return Task.CompletedTask;
+    }
+
+    private string ConvertToUrl(string filePath)
+    {
+        var protocol = HttpContext.Request.IsHttps ? "https" : "http";
+        var domaineName = HttpContext.Request.Host.Value;
+        return $"{protocol}://{domaineName}{filePath}";
     }
 }

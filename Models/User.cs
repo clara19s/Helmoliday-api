@@ -23,6 +23,8 @@ public class User : IdentityUser<Guid>
     [NotMapped]
     public string FullName => $"{FirstName} {LastName}";
 
+    public string ProfilePicture { get; set; } = "/uploads/default.jpg";
+
     public virtual ICollection<Invitation> Invitations { get; set; } = new List<Invitation>();
 
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();

@@ -77,7 +77,7 @@ public class HolidaysController : ControllerBase
                 holiday.EndDate.ToString("yyyy-MM-dd HH:mm"),
                 AddressConverter.CreateFromModel(holiday.Address),
                 holiday.Published,
-                listGuests.Select(g => new GuestResponse(g.Id, g.FirstName, g.LastName)),
+                listGuests.Select(g => new GuestResponse(g.Id, g.FirstName, g.LastName, ConvertToUrl(g.ProfilePicture))),
                 listActivities
             );
             return holidayResponse;
@@ -134,7 +134,7 @@ public class HolidaysController : ControllerBase
                 holiday.EndDate.ToString("yyyy-MM-dd HH:mm"),
                 AddressConverter.CreateFromModel(holiday.Address),
                 holiday.Published,
-                listGuests.Select(g => new GuestResponse(g.Id, g.FirstName, g.LastName)),
+                listGuests.Select(g => new GuestResponse(g.Id, g.FirstName, g.LastName, ConvertToUrl(g.ProfilePicture))),
                 listActivities
             );
             return holidayResponse;
@@ -164,7 +164,7 @@ public class HolidaysController : ControllerBase
             AddressConverter.CreateFromModel(holiday.Address),
             holiday.Published,
             listGuests.Select(g => new GuestResponse(
-                g.Id, g.FirstName, g.LastName
+                g.Id, g.FirstName, g.LastName, ConvertToUrl(g.ProfilePicture)
             )),
             listActivities
         );
@@ -386,5 +386,12 @@ public class HolidaysController : ControllerBase
         var holiday = query.FirstOrDefault(h => h.Id == id);
 
         return holiday ?? throw new NotFoundException("Période de vacances non trouvée.");
+    }
+
+    private string ConvertToUrl(string filePath)
+    {
+        var protocol = HttpContext.Request.IsHttps ? "https" : "http";
+        var domaineName = HttpContext.Request.Host.Value;
+        return $"{protocol}://{domaineName}{filePath}";
     }
 }

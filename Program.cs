@@ -4,11 +4,12 @@ using HELMoliday.Models;
 using HELMoliday.Options;
 using HELMoliday.Services.Cal;
 using HELMoliday.Services.Email;
+using HELMoliday.Services.FileUpload;
+using HELMoliday.Services.ImageUpload;
 using HELMoliday.Services.JwtToken;
 using HELMoliday.Services.OAuth;
 using HELMoliday.Services.OAuth.Strategies;
 using HELMoliday.Services.Weather;
-using Ical.Net.CalendarComponents;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -86,19 +87,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy = policy.WithOrigins(
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:5173",
-            "http://localhost:5173",
-            "https://localhost:5173",
-            "https://panoramix.cg.helmo.be",
-            "https://panoramix.cg.helmo.be")
+        policy = policy.AllowAnyOrigin()
         .AllowAnyMethod()
         .AllowAnyHeader();
     });
 });
 
-// log
+// Add Logs.
 var logger = new LoggerConfiguration()
   .ReadFrom.Configuration(builder.Configuration)
   .Enrich.FromLogContext()
@@ -116,8 +111,7 @@ builder.Services.AddIdentityCore<User>(options =>
     .AddRoles<Role>()
     .AddEntityFrameworkStores<HELMolidayContext>();
 
-// authentification 
-
+// Add OAuth Strategies.
 builder.Services.AddScoped<GoogleOAuthStrategy>();
 builder.Services.AddScoped<LinkedInOAuthStrategy>();
 builder.Services.AddScoped<OAuthStrategyFactory>();
@@ -130,12 +124,15 @@ var emailConfig = configuration
 builder.Services.AddSingleton(emailConfig);
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
-// Add calendar service 
+// Add Calendar Service.
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 
 // Add Weather Service.
 builder.Services.AddHttpClient("weather");
 builder.Services.AddSingleton<IWeatherService, OpenWeatherMapService>();
+
+// Add FileUploadService.
+builder.Services.AddScoped<IFileUploadService, LocalFileUploadService>();
 
 var app = builder.Build();
 
@@ -152,6 +149,8 @@ else
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseCors("CorsPolicy");
 

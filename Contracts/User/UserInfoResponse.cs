@@ -4,4 +4,5 @@ public record UserInfoResponse(
     Guid Id,
     string FirstName,
     string LastName,
-    string Email);
+    string Email,
+    string ProfilePicture);

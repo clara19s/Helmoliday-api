@@ -4,6 +4,7 @@ using HELMoliday.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HELMoliday.Migrations
 {
     [DbContext(typeof(HELMolidayContext))]
-    partial class HELMolidayContextModelSnapshot : ModelSnapshot
+    [Migration("20231203190614_AddProfilePicture")]
+    partial class AddProfilePicture
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,7 +55,7 @@ namespace HELMoliday.Migrations
 
                     b.HasIndex("HolidayId");
 
-                    b.ToTable("Activities", (string)null);
+                    b.ToTable("Activities");
                 });
 
             modelBuilder.Entity("HELMoliday.Models.Holiday", b =>
@@ -82,7 +84,7 @@ namespace HELMoliday.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Holidays", (string)null);
+                    b.ToTable("Holidays");
                 });
 
             modelBuilder.Entity("HELMoliday.Models.Invitation", b =>
@@ -321,7 +323,7 @@ namespace HELMoliday.Migrations
 
                     b.HasIndex("UsersId");
 
-                    b.ToTable("RoleUser", (string)null);
+                    b.ToTable("RoleUser");
                 });
 
             modelBuilder.Entity("HELMoliday.Models.Activity", b =>
@@ -332,7 +334,7 @@ namespace HELMoliday.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("HELMoliday.Models.Activity.Address#HELMoliday.Models.Address", "Address", b1 =>
+                    b.OwnsOne("HELMoliday.Models.Address", "Address", b1 =>
                         {
                             b1.Property<Guid>("ActivityId")
                                 .HasColumnType("uniqueidentifier");
@@ -363,7 +365,7 @@ namespace HELMoliday.Migrations
 
                             b1.HasKey("ActivityId");
 
-                            b1.ToTable("Activities", (string)null);
+                            b1.ToTable("Activities");
 
                             b1.WithOwner()
                                 .HasForeignKey("ActivityId");
@@ -377,7 +379,7 @@ namespace HELMoliday.Migrations
 
             modelBuilder.Entity("HELMoliday.Models.Holiday", b =>
                 {
-                    b.OwnsOne("HELMoliday.Models.Holiday.Address#HELMoliday.Models.Address", "Address", b1 =>
+                    b.OwnsOne("HELMoliday.Models.Address", "Address", b1 =>
                         {
                             b1.Property<Guid>("HolidayId")
                                 .HasColumnType("uniqueidentifier");
@@ -408,7 +410,7 @@ namespace HELMoliday.Migrations
 
                             b1.HasKey("HolidayId");
 
-                            b1.ToTable("Holidays", (string)null);
+                            b1.ToTable("Holidays");
 
                             b1.WithOwner()
                                 .HasForeignKey("HolidayId");

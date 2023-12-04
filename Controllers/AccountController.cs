@@ -8,10 +8,7 @@ using HELMoliday.Services.JwtToken;
 using HELMoliday.Contracts.User;
 using PusherServer;
 using HELMoliday.Exceptions;
-using HELMoliday.Contracts.Holiday;
-using HELMoliday.Services.Weather;
-using Microsoft.EntityFrameworkCore;
-using HELMoliday.Services.Cal;
+using HELMoliday.Services.ImageUpload;
 
 namespace HELMoliday.Controllers
 {
@@ -40,7 +37,12 @@ namespace HELMoliday.Controllers
                 return NotFound(new { error = "User not found." });
             }
 
-            return Ok(new UserInfoResponse(user.Id, user.FirstName, user.LastName, user.Email));
+            return Ok(new UserInfoResponse(
+                user.Id,
+                user.FirstName,
+                user.LastName,
+                user.Email,
+                ConvertToUrl(user.ProfilePicture)));
         }
 
         [Route("profile")]
@@ -66,10 +68,34 @@ namespace HELMoliday.Controllers
 
             await _userManager.UpdateAsync(user);
 
-            return Ok(new AuthResponse(user.Id, user.FirstName, user.LastName, user.Email, _jwtTokenGenerator.GenerateToken(user)));
+            return Ok(new AuthResponse(user.Id, user.FirstName, user.LastName, user.Email, ConvertToUrl(user.ProfilePicture), _jwtTokenGenerator.GenerateToken(user)));
         }
 
-        
+        [HttpPut("picture")]
+        public async Task<IActionResult> ChangeProfilePicture(IFormFile file, [FromServices] IFileUploadService fileUploadService)
+        {
+            var user = await _userManager.GetUserAsync(HttpContext.User);
+            var localFilePath = await fileUploadService.UploadFileAsync(file, user.Id.ToString());
+            user.ProfilePicture = localFilePath;
+
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new AuthResponse(user.Id, user.FirstName, user.LastName, user.Email, ConvertToUrl(user.ProfilePicture), _jwtTokenGenerator.GenerateToken(user)));
+        }
+
+        [HttpGet("picture")]
+        public async Task<IActionResult> GetProfilePicture([FromServices] IFileUploadService fileUploadService)
+        {
+            var user = await _userManager.GetUserAsync(HttpContext.User);
+
+            if (user == null)
+            {
+                return NotFound(new { error = "User not found." });
+            }
+            var image = await fileUploadService.GetFileAsync(user.ProfilePicture);
+
+            return File(image, "image/jpeg");
+        }
 
         [Route("password")]
         [HttpPut()]
@@ -129,6 +155,11 @@ namespace HELMoliday.Controllers
             return NoContent();
         }
 
-
+        private string ConvertToUrl(string filePath)
+        {
+            var protocol = HttpContext.Request.IsHttps ? "https" : "http";
+            var domaineName = HttpContext.Request.Host.Value;
+            return $"{protocol}://{domaineName}{filePath}";
+        }
     }
 }

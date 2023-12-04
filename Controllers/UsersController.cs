@@ -35,6 +35,14 @@ public class UsersController : ControllerBase
             user.Id,
             user.FirstName,
             user.LastName,
-            user.Email));
+            user.Email,
+            ConvertToUrl(user.ProfilePicture)));
+    }
+
+    private string ConvertToUrl(string filePath)
+    {
+        var protocol = HttpContext.Request.IsHttps ? "https" : "http";
+        var domaineName = HttpContext.Request.Host.Value;
+        return $"{protocol}://{domaineName}{filePath}";
     }
 }

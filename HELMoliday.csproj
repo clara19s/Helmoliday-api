@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="wwwroot\NewFolder\**" />
+    <Content Remove="wwwroot\NewFolder\**" />
+    <EmbeddedResource Remove="wwwroot\NewFolder\**" />
+    <None Remove="wwwroot\NewFolder\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Google.Apis.Auth" Version="1.64.0" />
     <PackageReference Include="MailKit" Version="4.3.0" />
     <PackageReference Include="Ical.Net" Version="4.2.0" />
@@ -29,6 +36,8 @@
 
   <ItemGroup>
     <Folder Include="Logs\" />
+    <Folder Include="NewFolder\" />
+    <Folder Include="Resources\Uploads\" />
   </ItemGroup>
 
 </Project>
