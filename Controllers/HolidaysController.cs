@@ -351,7 +351,8 @@ public class HolidaysController : ControllerBase
                     id = user.Id.ToString(),
                     firstName = user.FirstName,
                     lastName = user.LastName,
-                    email = user.Email
+                    email = user.Email,
+                    profilePicture = ConvertToUrl(user.ProfilePicture)
                 }
             });
         return Ok();
