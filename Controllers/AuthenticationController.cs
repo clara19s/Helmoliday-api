@@ -183,7 +183,7 @@ public class AuthenticationController : ControllerBase
     private string ConvertToUrl(string filePath)
     {
         var protocol = HttpContext.Request.IsHttps ? "https" : "http";
-        var domaineName = HttpContext.Request.Host.Value;
+        var domaineName = HttpContext.Request.Host.Value.Contains("localhost") ? HttpContext.Request.Host.Value : "porthos-intra.cg.helmo.be/Q210266";
         return $"{protocol}://{domaineName}{filePath}";
     }
 }

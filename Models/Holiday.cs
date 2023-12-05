@@ -29,5 +29,4 @@ public partial class Holiday : IEvent
     public virtual ICollection<Invitation> Invitations { get; set; } = new List<Invitation>();
 
     public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
-
 }

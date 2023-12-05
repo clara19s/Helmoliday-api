@@ -12,6 +12,7 @@ using PusherServer;
 using HELMoliday.Services.Cal;
 using System.Text;
 using HELMoliday.Exceptions;
+using HELMoliday.Services.ImageUpload;
 
 namespace HELMoliday.Controllers;
 [Route("holidays")]
@@ -315,7 +316,7 @@ public class HolidaysController : ControllerBase
     }
 
     [HttpPost("{id}/chat/messages")]
-    public async Task<ActionResult> SendMessage([FromRoute] Guid id, [FromBody] ChatMessageRequest request)
+    public async Task<ActionResult> SendMessage([FromRoute] Guid id, [FromForm] ChatMessageRequest request, [FromServices] IFileUploadService fileUploadService)
     {
         var holiday = GetHolidayIfExist(id,
             query => query.Include(h => h.Invitations));
@@ -326,6 +327,16 @@ public class HolidaysController : ControllerBase
             Cluster = "eu",
             Encrypted = false
         };
+
+        var imagesUrl = new List<string>();
+        if (request.Images != null)
+        {
+            foreach (var image in request.Images)
+            {
+                var imageUrl = await fileUploadService.UploadFileAsync(image, Guid.NewGuid().ToString());
+                imagesUrl.Add(ConvertToUrl(imageUrl));
+            }
+        }
 
         // TODO: Get from config
         var pusher = new Pusher(
@@ -344,14 +355,15 @@ public class HolidaysController : ControllerBase
                 {
                     clientId = request.ClientId,
                     text = request.Text,
-                    images = Array.Empty<string>()
+                    images = imagesUrl
                 },
                 from = new
                 {
                     id = user.Id.ToString(),
                     firstName = user.FirstName,
                     lastName = user.LastName,
-                    email = user.Email
+                    email = user.Email,
+                    profilePicture = ConvertToUrl(user.ProfilePicture)
                 }
             });
         return Ok();
@@ -391,7 +403,7 @@ public class HolidaysController : ControllerBase
     private string ConvertToUrl(string filePath)
     {
         var protocol = HttpContext.Request.IsHttps ? "https" : "http";
-        var domaineName = HttpContext.Request.Host.Value;
+        var domaineName = HttpContext.Request.Host.Value.Contains("localhost") ? HttpContext.Request.Host.Value : "porthos-intra.cg.helmo.be/Q210266";
         return $"{protocol}://{domaineName}{filePath}";
     }
 }

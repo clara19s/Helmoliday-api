@@ -38,7 +38,6 @@ public class LocalFileUploadService : IFileUploadService
     {
         var fileNameAndExtension = Path.GetFileName(filePath);
         var file = File.OpenRead(Path.Combine(_environment.WebRootPath, "uploads", fileNameAndExtension));
-
         return Task.FromResult<Stream>(file);
     }
 }

@@ -5,4 +5,5 @@ public record ChatAuthRequest(
 
 public record ChatMessageRequest(
     string? ClientId,
-    string Text);
+    string Text,
+    List<IFormFile>? Images);

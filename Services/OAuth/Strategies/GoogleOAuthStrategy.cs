@@ -6,10 +6,9 @@ public class GoogleOAuthStrategy : IOAuthStrategy
 {
     public async Task<UserInfo> AuthenticateAsync(string code)
     {
-        GoogleJsonWebSignature.Payload validatedToken;
         try
         {
-            validatedToken = await GoogleJsonWebSignature.ValidateAsync(code);
+            GoogleJsonWebSignature.Payload validatedToken = await GoogleJsonWebSignature.ValidateAsync(code);
             return new UserInfo(validatedToken.Email, validatedToken.GivenName, validatedToken.FamilyName);
         }
         catch (InvalidJwtException)

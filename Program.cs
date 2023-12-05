@@ -87,7 +87,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy = policy.AllowAnyOrigin()
+        policy = policy.AllowAnyOrigin() // TODO: Spécifier des origines concrètes
         .AllowAnyMethod()
         .AllowAnyHeader();
     });
