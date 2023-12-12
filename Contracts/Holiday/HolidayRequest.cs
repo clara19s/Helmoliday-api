@@ -1,11 +1,12 @@
 ﻿using HELMoliday.Contracts.Common;
+using HELMoliday.Validations;
 
 namespace HELMoliday.Contracts.Holiday;
 public record HolidayRequest(
     string Name,
     string? Description,
     string StartDate,
-    string EndDate,
+    [DateValidation("StartDate")] string EndDate,
     AddressDto Address,
     bool Published);
 
