@@ -305,8 +305,7 @@ public class HolidaysController : ControllerBase
             user_id = user.Id.ToString(),
             user_info = new
             {
-                name = $"{user.FirstName} {user.LastName}",
-                avatar = "https://picsum.photos/200"
+                name = $"{user.FirstName} {user.LastName}"
             }
         };
 
@@ -366,7 +365,54 @@ public class HolidaysController : ControllerBase
                     profilePicture = ConvertToUrl(user.ProfilePicture)
                 }
             });
+
+        var chatMessage = new ChatMessage
+        {
+            UserId = user.Id,
+            HolidayId = id,
+            Content = request.Text,
+            SentAt = DateTime.Now,
+            Images = imagesUrl.Select(i => new ChatImage { Path = i }).ToList()
+        };
+
+        _context.ChatMessages.Add(chatMessage);
+        await _context.SaveChangesAsync();
+
         return Ok();
+    }
+
+    [HttpGet("{id}/chat/messages")]
+    public async Task<ActionResult> GetMessages([FromRoute] Guid id)
+    {
+        var holiday = GetHolidayIfExist(id,
+                       query => query.Include(h => h.Invitations));
+        CheckIfIsAllowed(holiday);
+
+        var chatMessages = await _context.ChatMessages
+            .Include(m => m.User)
+            .Include(m => m.Images)
+            .Where(m => m.HolidayId == id)
+            .OrderBy(m => m.SentAt)
+            .ToListAsync();
+
+        return Ok(chatMessages.Select(m => new
+        {
+            sentAt = m.SentAt.ToString("yyyy-MM-dd HH:mm"),
+            data = new
+            {
+                clientId = m.Id,
+                text = m.Content,
+                images = m.Images.Select(i => i.Path)
+            },
+            from = new
+            {
+                id = m.UserId.ToString(),
+                firstName = m.User.FirstName,
+                lastName = m.User.LastName,
+                email = m.User.Email,
+                profilePicture = ConvertToUrl(m.User.ProfilePicture)
+            }
+        }));
     }
 
     private void CheckIfIsAllowed(Holiday holiday)

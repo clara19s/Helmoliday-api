@@ -36,7 +36,6 @@
 
   <ItemGroup>
     <Folder Include="Logs\" />
-    <Folder Include="Resources\Uploads\" />
   </ItemGroup>
 
 </Project>

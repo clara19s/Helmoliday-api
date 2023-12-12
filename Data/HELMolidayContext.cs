@@ -18,6 +18,8 @@ public partial class HELMolidayContext : IdentityDbContext<User, Role, Guid>
 
     public DbSet<Invitation> Invitations { get; set; }
 
+    public DbSet<ChatMessage> ChatMessages { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
