@@ -3,7 +3,6 @@ using HELMoliday.Data;
 using HELMoliday.Models;
 using HELMoliday.Contracts.Invitation;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore.Internal;
 using HELMoliday.Options;
 using HELMoliday.Services.Email;
 
@@ -23,10 +22,7 @@ public class InvitationsController : ControllerBase
         _emailSender = emailSender;
     }
 
-    
-       // POST: api/Invitations
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
+    [HttpPost]
     public async Task<ActionResult<Invitation>> PostInvitation([FromBody] InvitationRequest invitation)
     {
         if (_context.Invitations == null)
@@ -61,9 +57,9 @@ public class InvitationsController : ControllerBase
         {
             To = new List<MessageAddress> { email },
             Subject = $"Vous avez été invité dans le groupe \"{holiday.Name}\"",
-            Content = $"Cher(e) {user.FullName},<br><br>Vous avez une nouvelle invitation pour le groupe {holiday.Name}" // TODO: Changer l'URL pour qu'elle soit dynamique
+            Content = $"Cher(e) {user.FullName},<br><br>Vous avez une nouvelle invitation pour le groupe {holiday.Name}"
         };
-        _emailSender.SendEmailAsync(message);
+        await _emailSender.SendEmailAsync(message);
 
         return NoContent();
     }
@@ -76,16 +72,16 @@ public class InvitationsController : ControllerBase
         {
             return NotFound();
         }
-        var user =  await _userManager.GetUserAsync(HttpContext.User);
+        var user = await _userManager.GetUserAsync(HttpContext.User);
 
         var invitations = _context.Invitations.Where(i => i.HolidayId == id);
-        var invitation = invitations.Where (i => i.UserId == user.Id).FirstOrDefault();
-        
+        var invitation = invitations.Where(i => i.UserId == user.Id).FirstOrDefault();
+
         if (invitation == null)
         {
             return NotFound();
         }
-       
+
         if (invitations.Count() == 1)
         {
             _context.Invitations.Remove(invitation);

@@ -48,7 +48,7 @@ public class ActivitiesController : ControllerBase
             return NotFound(new { error = "Holiday not found." });
         }
 
-        CheckIfIsGuest(holiday);
+        CheckIfIsAllowed(holiday);
 
         return Ok(holiday.Activities.Select(a => new ActivityResponse(
                 a.Id,
@@ -81,7 +81,7 @@ public class ActivitiesController : ControllerBase
             return NotFound();
         }
 
-        CheckIfIsGuest(activity.Holiday);
+        CheckIfIsAllowed(activity.Holiday);
 
         return new ActivityResponse(
             activity.Id,
@@ -160,7 +160,7 @@ public class ActivitiesController : ControllerBase
             return NotFound();
         }
 
-        CheckIfIsGuest(holiday);
+        CheckIfIsAllowed(holiday);
 
         var activity = new Activity
         {
@@ -214,17 +214,17 @@ public class ActivitiesController : ControllerBase
             return NotFound();
         }
 
-        CheckIfIsGuest(activity.Holiday);
+        CheckIfIsAllowed(activity.Holiday);
 
         _context.Activities.Remove(activity);
         await _context.SaveChangesAsync();
 
         return NoContent();
     }
-    private void CheckIfIsGuest(Holiday holiday)
+    private void CheckIfIsAllowed(Holiday holiday)
     {
         var userId = Guid.Parse(_userManager.GetUserId(HttpContext.User));
-        if (!holiday.Invitations.Any(i => i.UserId == userId))
+        if (!holiday.Published && !holiday.Invitations.Any(i => i.UserId == userId))
         {
             throw new ForbiddenAccessException("Vous ne faites pas partie de la période de vacances.");
         }

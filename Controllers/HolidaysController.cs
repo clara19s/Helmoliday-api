@@ -152,7 +152,7 @@ public class HolidaysController : ControllerBase
             query => query.Include(h => h.Invitations).ThenInclude(i => i.User),
             query => query.Include(h => h.Activities));
 
-        CheckIfIsGuest(holiday);
+        CheckIfIsAllowed(holiday);
 
         var listGuests = holiday.Invitations.Select(i => i.User).ToList();
         var listActivities = holiday.Activities.Select(u => u.Id.ToString());
@@ -177,22 +177,22 @@ public class HolidaysController : ControllerBase
     [HttpGet("{id}/calendar")]
     public async Task<ActionResult> GetCalendar(Guid id, [FromServices] ICalendarService calendarService)
     {
-       
-            var holiday = _context.Holidays.Where(h => h.Id == id).Include(h => h.Activities).FirstOrDefault();
 
-            var events = new List<IEvent>();
+        var holiday = _context.Holidays.Where(h => h.Id == id).Include(h => h.Activities).FirstOrDefault();
 
-            events.Add(holiday);
-            foreach (var activity in holiday.Activities)
-            {
-                events.Add(activity);
-            }
+        var events = new List<IEvent>();
 
-            var calendar = calendarService.CreateIcs(events);
-            byte[] data = Encoding.UTF8.GetBytes(calendar);
-            return File(data, "text/calendar", "event.ics");
-       
-            }
+        events.Add(holiday);
+        foreach (var activity in holiday.Activities)
+        {
+            events.Add(activity);
+        }
+
+        var calendar = calendarService.CreateIcs(events);
+        byte[] data = Encoding.UTF8.GetBytes(calendar);
+        return File(data, "text/calendar", "event.ics");
+
+    }
 
     // GET: api/Holidays/5
     [HttpGet("{id}/weather")]
@@ -202,7 +202,7 @@ public class HolidaysController : ControllerBase
         {
             var holiday = GetHolidayIfExist(id,
                 query => query.Include(h => h.Invitations));
-            CheckIfIsGuest(holiday);
+            CheckIfIsAllowed(holiday);
             var city = holiday.Address.City;
             var weather = await _weatherService.GetWeatherForCityAsync(city);
             return weather is null ? NotFound("Aucune donnée météorologique n'a été trouvée pour cette période de vacances") : Ok(weather);
@@ -221,7 +221,7 @@ public class HolidaysController : ControllerBase
     {
         var holidayBd = GetHolidayIfExist(id,
             query => query.Include(h => h.Invitations));
-        CheckIfIsGuest(holidayBd);
+        CheckIfIsAllowed(holidayBd);
 
         holidayBd.Description = holiday.Description;
         holidayBd.Name = holiday.Name;
@@ -272,7 +272,7 @@ public class HolidaysController : ControllerBase
     {
         var holiday = GetHolidayIfExist(id,
             query => query.Include(h => h.Invitations));
-        CheckIfIsGuest(holiday);
+        CheckIfIsAllowed(holiday);
 
         _context.Holidays.Remove(holiday);
         await _context.SaveChangesAsync();
@@ -285,7 +285,7 @@ public class HolidaysController : ControllerBase
     {
         var holiday = GetHolidayIfExist(id,
             query => query.Include(h => h.Invitations));
-        CheckIfIsGuest(holiday);
+        CheckIfIsAllowed(holiday);
         var user = await _userManager.GetUserAsync(HttpContext.User);
         var options = new PusherOptions
         {
@@ -320,7 +320,7 @@ public class HolidaysController : ControllerBase
     {
         var holiday = GetHolidayIfExist(id,
             query => query.Include(h => h.Invitations));
-        CheckIfIsGuest(holiday);
+        CheckIfIsAllowed(holiday);
         var user = await _userManager.GetUserAsync(HttpContext.User);
         var options = new PusherOptions
         {
@@ -369,10 +369,10 @@ public class HolidaysController : ControllerBase
         return Ok();
     }
 
-    private void CheckIfIsGuest(Holiday holiday)
+    private void CheckIfIsAllowed(Holiday holiday)
     {
         var userId = Guid.Parse(_userManager.GetUserId(HttpContext.User));
-        if (!holiday.Invitations.Any(i => i.UserId == userId))
+        if (!holiday.Published && !holiday.Invitations.Any(i => i.UserId == userId))
         {
             throw new ForbiddenAccessException("Vous ne faites pas partie de la période de vacances.");
         }
