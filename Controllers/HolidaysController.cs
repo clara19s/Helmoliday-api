@@ -393,6 +393,7 @@ public class HolidaysController : ControllerBase
             .Include(m => m.Images)
             .Where(m => m.HolidayId == id)
             .OrderBy(m => m.SentAt)
+            .Take(100)
             .ToListAsync();
 
         return Ok(chatMessages.Select(m => new
