@@ -27,6 +27,11 @@ namespace HELMoliday.Controllers
             _jwtTokenGenerator = jwtTokenGenerator;
         }
 
+        /// <summary>
+        /// Récupère les informations d'un utilisateur.
+        /// </summary>
+        /// <returns>Les informations de l'utilisateur.</returns>
+        /// <response code="200">Les informations de l'utilisateur.</response>
         [HttpGet("profile")]
         public async Task<IActionResult> GetUserInfo()
         {
@@ -45,6 +50,15 @@ namespace HELMoliday.Controllers
                 ConvertToUrl(user.ProfilePicture)));
         }
 
+        /// <summary>
+        /// Met à jour les informations d'un utilisateur.
+        /// </summary>
+        /// <param name="dto">Les informations mises à jour de l'utilisateur.</param>
+        /// <returns>Les informations de l'utilisateur mises à jour ainsi qu'un nouveau token JWT.</returns>
+        /// <response code="200">Les informations de l'utilisateur mises à jour ainsi qu'un nouveau token JWT.</response>
+        /// <response code="400">Les informations de l'utilisateur sont invalides.</response>
+        /// <response code="404">L'utilisateur n'a pas été trouvé.</response>
+        /// <response code="409">L'adresse email est déjà utilisée.</response>
         [Route("profile")]
         [HttpPut()]
         public async Task<IActionResult> ChangeProfileInformation(UpsertUserRequest dto)
@@ -71,6 +85,13 @@ namespace HELMoliday.Controllers
             return Ok(new AuthResponse(user.Id, user.FirstName, user.LastName, user.Email, ConvertToUrl(user.ProfilePicture), _jwtTokenGenerator.GenerateToken(user)));
         }
 
+        /// <summary>
+        /// Change la photo de profil de l'utilisateur.
+        /// </summary>
+        /// <param name="file">La nouvelle image de profil de l'utilisateur.</param>
+        /// <returns>Les informations de l'utilisateur mises à jour ainsi qu'un nouveau token JWT.</returns>
+        /// <response code="200">Les informations de l'utilisateur mises à jour ainsi qu'un nouveau token JWT.</response>
+        /// <response code="400">Les informations de l'utilisateur sont invalides.</response>
         [HttpPut("picture")]
         public async Task<IActionResult> ChangeProfilePicture(IFormFile file, [FromServices] IFileUploadService fileUploadService)
         {
@@ -83,6 +104,12 @@ namespace HELMoliday.Controllers
             return Ok(new AuthResponse(user.Id, user.FirstName, user.LastName, user.Email, ConvertToUrl(user.ProfilePicture), _jwtTokenGenerator.GenerateToken(user)));
         }
 
+        /// <summary>
+        /// Récupère la photo de profil de l'utilisateur.
+        /// </summary>
+        /// <returns>Un fichier représentant la photo de profil de l'utilisateur actuellement connecté.</returns>
+        /// <response code="200">Un fichier représentant la photo de profil de l'utilisateur actuellement connecté.</response>
+        /// <response code="404">L'utilisateur n'a pas été trouvé.</response>
         [HttpGet("picture")]
         public async Task<IActionResult> GetProfilePicture([FromServices] IFileUploadService fileUploadService)
         {
@@ -97,26 +124,12 @@ namespace HELMoliday.Controllers
             return File(image, "image/jpeg");
         }
 
-        [Route("password")]
-        [HttpPut()]
-        public async Task<IActionResult> ChangePassword(UpsertPasswordRequest dto)
-        {
-            var user = await _userManager.GetUserAsync(HttpContext.User);
-
-            if (user == null)
-            {
-                return NotFound(new { error = "User not found." });
-            }
-
-            var passwordChangeResult = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
-            if (!passwordChangeResult.Succeeded)
-            {
-                return Problem("Password couldn't be changed.");
-            }
-
-            return NoContent();
-        }
-
+        /// <summary>
+        /// Supprime le compte de l'utilisateur.
+        /// </summary>
+        /// <returns></returns>
+        /// <response code="204">Le compte de l'utilisateur a été supprimé.</response>
+        /// <response code="404">L'utilisateur n'a pas été trouvé.</response>
         [HttpDelete()]
         public async Task<IActionResult> DeleteAccount()
         {

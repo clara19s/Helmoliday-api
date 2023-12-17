@@ -30,10 +30,15 @@ public class HolidaysController : ControllerBase
         _weatherService = weatherService;
     }
 
-    // GET: api/Holidays
+    /// <summary>
+    /// Récupère l'ensemble des périodes de vacances publiées.
+    /// </summary>
+    /// <returns>Un tableau de périodes de vacances qui sont publiées.</returns>
+    /// <response code="200">Retourne un tableau de périodes de vacances.</response>
+    /// <response code="404">Aucune période de vacances n'a été trouvée.</response>
     [Route("published")]
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetHolidays([FromQuery] HolidayFilter? filter)
+    public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetHolidays()
     {
         if (_context.Holidays == null)
         {
@@ -41,30 +46,11 @@ public class HolidaysController : ControllerBase
         }
         var user = await _userManager.GetUserAsync(HttpContext.User);
 
-        var holidaysQuery = _context.Holidays
+        var holidays = await _context.Holidays
             .Include(h => h.Invitations)
                 .ThenInclude(i => i.User)
             .Include(h => h.Activities)
-            .Where(h => h.Published)
-            .AsQueryable();
-
-        if (filter is not null)
-        {
-            if (!string.IsNullOrEmpty(filter.Query))
-            {
-                holidaysQuery = holidaysQuery.Where(h => h.Name.Contains(filter.Query) || h.Description.Contains(filter.Query));
-            }
-            if (!string.IsNullOrEmpty(filter.StartDate))
-            {
-                holidaysQuery = holidaysQuery.Where(h => h.StartDate >= DateConverter.ConvertStringToDate(filter.StartDate));
-            }
-            if (!string.IsNullOrEmpty(filter.EndDate))
-            {
-                holidaysQuery = holidaysQuery.Where(h => h.StartDate <= DateConverter.ConvertStringToDate(filter.EndDate));
-            }
-        }
-
-        var holidays = await holidaysQuery.ToListAsync();
+            .Where(h => h.Published).ToListAsync();
 
         var holidaysDto = holidays.Select(holiday =>
         {
@@ -87,10 +73,15 @@ public class HolidaysController : ControllerBase
         return Ok(holidaysDto);
     }
 
-    // GET: api/Holidays
+    /// <summary>
+    /// Récupère l'ensemble des périodes de vacances auxquelles l'utilisateur participe.
+    /// </summary>
+    /// <returns>Un tableau de périodes de vacances auxquelles l'utilisateur participe.</returns>
+    /// <response code="200">Retourne un tableau de périodes de vacances.</response>
+    /// <response code="404">Aucune période de vacances n'a été trouvée.</response>
     [Route("invited")]
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetMyHolidays([FromQuery] HolidayFilter? filter)
+    public async Task<ActionResult<IEnumerable<HolidayResponse>>> GetMyHolidays()
     {
         if (_context.Holidays == null)
         {
@@ -98,30 +89,12 @@ public class HolidaysController : ControllerBase
         }
 
         var user = await _userManager.GetUserAsync(HttpContext.User);
-        var holidaysQuery = _context.Holidays
+        var holidays = await _context.Holidays
             .Include(h => h.Invitations)
                 .ThenInclude(i => i.User)
             .Include(h => h.Activities)
             .Where(h => h.Invitations.Any(i => i.UserId == user.Id))
-            .AsQueryable();
-
-        if (filter is not null)
-        {
-            if (!string.IsNullOrEmpty(filter.Query))
-            {
-                holidaysQuery = holidaysQuery.Where(h => h.Name.Contains(filter.Query) || h.Description.Contains(filter.Query));
-            }
-            if (!string.IsNullOrEmpty(filter.StartDate))
-            {
-                holidaysQuery = holidaysQuery.Where(h => h.StartDate >= DateConverter.ConvertStringToDate(filter.StartDate));
-            }
-            if (!string.IsNullOrEmpty(filter.EndDate))
-            {
-                holidaysQuery = holidaysQuery.Where(h => h.StartDate <= DateConverter.ConvertStringToDate(filter.EndDate));
-            }
-        }
-
-        var holidays = await holidaysQuery.ToListAsync();
+            .ToListAsync();
 
         var holidaysDto = holidays.Select(holiday =>
         {
@@ -144,7 +117,14 @@ public class HolidaysController : ControllerBase
         return Ok(holidaysDto);
     }
 
-    // GET: api/Holidays/5
+    /// <summary>
+    /// Récupère une période de vacances en fonction de son identifiant.
+    /// </summary>
+    /// <param name="id">L'identifiant unique de la période de vacances.</param>
+    /// <returns>Les détails de la période de vacances.</returns>
+    /// <response code="200">Retourne les détails de la période de vacances.</response>
+    /// <response code="404">Aucune période de vacances n'a été trouvée.</response>
+    /// <response code="403">Si l'utilisateur n'est pas invité à la période de vacances.</response>
     [HttpGet("{id}")]
     public async Task<ActionResult<HolidayResponse>> GetHoliday(Guid id)
     {
@@ -173,28 +153,49 @@ public class HolidaysController : ControllerBase
         return Ok(holidayResponse);
     }
 
-    // GET: api/calendar
+    /// <summary>
+    /// Génère et retourne un fichier .ics contenant les informations de la période de vacances et de ses activités.
+    /// </summary>
+    /// <param name="id">L'identifiant unique de la période de vacances.</param>
+    /// <returns>Un fichier .ics contenant les informations de la période de vacances et de ses activités.</returns>
+    /// <response code="200">Retourne un fichier .ics contenant les informations de la période de vacances et de ses activités.</response>
+    /// <response code="403">Si l'utilisateur n'est pas invité à la période de vacances.</response>
+    /// <response code="404">Aucune période de vacances n'a été trouvée.</response>
     [HttpGet("{id}/calendar")]
     public async Task<ActionResult> GetCalendar(Guid id, [FromServices] ICalendarService calendarService)
     {
-
         var holiday = _context.Holidays.Where(h => h.Id == id).Include(h => h.Activities).FirstOrDefault();
 
-        var events = new List<IEvent>();
+        if (holiday == null)
+        {
+            return NotFound();
+        }
 
-        events.Add(holiday);
+        CheckIfIsAllowed(holiday);
+
+        var events = new List<IEvent>
+        {
+            holiday
+        };
         foreach (var activity in holiday.Activities)
         {
             events.Add(activity);
         }
-
         var calendar = calendarService.CreateIcs(events);
         byte[] data = Encoding.UTF8.GetBytes(calendar);
         return File(data, "text/calendar", "event.ics");
 
     }
 
-    // GET: api/Holidays/5
+    /// <summary>
+    /// Récupère les informations météorologiques d'une période de vacances.
+    /// </summary>
+    /// <param name="id">Identifiant unique de la période de vacances.</param>
+    /// <returns>Les données météorologiques d'une période de vacances.</returns>
+    /// <response code="200">Retourne les données météorologiques d'une période de vacances.</response>
+    /// <response code="400">Une ou plusieurs informations sont manquantes ou invalides.</response>
+    /// <response code="403">Si l'utilisateur n'est pas invité à la période de vacances.</response>
+    /// <response code="404">Aucune période de vacances n'a été trouvée.</response>
     [HttpGet("{id}/weather")]
     public async Task<ActionResult<HolidayResponse>> GetHolidayWeather(Guid id)
     {
@@ -213,9 +214,16 @@ public class HolidaysController : ControllerBase
         }
     }
 
-    // PUT: api/Holidays/5
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-
+    /// <summary>
+    /// Met à jour une période de vacances en fonction de son identifiant.
+    /// </summary>
+    /// <param name="id">L'identifiant unique de la période de vacances.</param>
+    /// <param name="holiday">Les détails de la période de vacances.</param>
+    /// <returns></returns>
+    /// <response code="204">La période de vacances a été mise à jour.</response>
+    /// <response code="400">Une ou plusieurs informations sont manquantes ou invalides.</response>
+    /// <response code="403">Si l'utilisateur n'est pas invité à la période de vacances.</response>
+    /// <response code="404">Aucune période de vacances n'a été trouvée.</response>
     [HttpPut("{id}")]
     public async Task<IActionResult> PutHoliday(Guid id, HolidayRequest holiday)
     {
@@ -235,7 +243,13 @@ public class HolidaysController : ControllerBase
         return NoContent();
     }
 
-    // POST: api/Holidays
+    /// <summary>
+    /// Crée une période de vacances.
+    /// </summary>
+    /// <param name="holidayDto">Les détails d'une période de vacances.</param>
+    /// <returns>Une réponse Created avec l'identifiant de la période de vacances.</returns>
+    /// <response code="201">La période de vacances a été créée.</response>
+    /// <response code="400">Une ou plusieurs informations sont manquantes ou invalides.</response>
     [HttpPost]
     public async Task<ActionResult<Holiday>> PostHoliday(HolidayRequest holidayDto)
     {
@@ -266,7 +280,14 @@ public class HolidaysController : ControllerBase
         return Created("GetHoliday", new { id = holiday.Id });
     }
 
-    // DELETE: api/Holidays/5
+    /// <summary>
+    /// Supprime une période de vacances en fonction de son identifiant.
+    /// </summary>
+    /// <param name="id">L'identifiant unique de la période de vacances.</param>
+    /// <returns></returns>
+    /// <response code="204">La période de vacances a été supprimée.</response>
+    /// <response code="403">Si l'utilisateur n'est pas invité à la période de vacances.</response>
+    /// <response code="404">Aucune période de vacances n'a été trouvée.</response>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteHoliday(Guid id)
     {
@@ -280,6 +301,16 @@ public class HolidaysController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Permet à l'utilisateur de s'authentifier et de s'abonner à Pusher.
+    /// </summary>
+    /// <param name="id">L'identifiant unique de la période de vacances.</param>
+    /// <param name="authRequest">Objet comprenant le socketId ainsi que le nom du channel auquel se connecter.</param>
+    /// <returns>La clé permettant à l'utilisateur de s'authentifier et de s'abonner à Pusher.</returns>
+    /// <response code="200">Retourne la clé permettant à l'utilisateur de s'authentifier et de s'abonner à Pusher.</response>
+    /// <response code="400">Une ou plusieurs informations sont manquantes ou invalides.</response>
+    /// <response code="403">Si l'utilisateur n'est pas invité à la période de vacances.</response>
+    /// <response code="404">Aucune période de vacances n'a été trouvée.</response>
     [HttpPost("{id}/chat/auth")]
     public async Task<ActionResult> ChatAuthentication([FromRoute] Guid id, [FromBody] ChatAuthRequest authRequest)
     {
@@ -314,6 +345,16 @@ public class HolidaysController : ControllerBase
         return new ContentResult { Content = json, ContentType = "application/json" };
     }
 
+    /// <summary>
+    /// Poste un message dans le chat d'une période de vacances.
+    /// </summary>
+    /// <param name="id">Identifiant unique de la période de vacances.</param>
+    /// <param name="request">Un objet représentant un message</param>
+    /// <returns></returns>
+    /// <response code="200">Le message a été envoyé.</response>
+    /// <response code="400">Une ou plusieurs informations sont manquantes ou invalides.</response>
+    /// <response code="403">Si l'utilisateur n'est pas invité à la période de vacances.</response>
+    /// <response code="404">Aucune période de vacances n'a été trouvée.</response>
     [HttpPost("{id}/chat/messages")]
     public async Task<ActionResult> SendMessage([FromRoute] Guid id, [FromForm] ChatMessageRequest request, [FromServices] IFileUploadService fileUploadService)
     {
@@ -381,6 +422,14 @@ public class HolidaysController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// Récupère les 100 derniers messages du chat d'une période de vacances.
+    /// </summary>
+    /// <param name="id">Identifiant unique de la période de vacances.</param>
+    /// <returns>Les 100 derniers messages du chat d'une période de vacances.</returns>
+    /// <response code="200">Retourne les 100 derniers messages du chat d'une période de vacances.</response>
+    /// <response code="403">Si l'utilisateur n'est pas invité à la période de vacances.</response>
+    /// <response code="404">Aucune période de vacances n'a été trouvée.</response>
     [HttpGet("{id}/chat/messages")]
     public async Task<ActionResult> GetMessages([FromRoute] Guid id)
     {

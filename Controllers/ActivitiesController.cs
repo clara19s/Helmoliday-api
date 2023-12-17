@@ -29,7 +29,14 @@ public class ActivitiesController : ControllerBase
         _emailSender = emailSender;
     }
 
-    // GET: api/Activities
+    /// <summary>
+    /// Récupère toutes les activités d'une période de vacances donnée.
+    /// </summary>
+    /// <param name="holidayId">L'identifiant unique de la période de vacances.</param>
+    /// <returns>Un tableau d'objets de type Activity.</returns>
+    /// <response code="200">Retourne un tableau d'objets de type Activity.</response>
+    /// <response code="404">Si la période de vacances n'existe pas.</response>
+    /// <response code="403">Si l'utilisateur n'est pas autorisé à accéder à la période de vacances.</response>
     [HttpGet("holiday/{holidayId}")]
     public async Task<ActionResult<IEnumerable<Activity>>> GetActivitiesFromHoliday(Guid holidayId)
     {
@@ -62,7 +69,14 @@ public class ActivitiesController : ControllerBase
             .ToList()); ;
     }
 
-    // GET: api/Activities/5
+    /// <summary>
+    /// Récupère les détails d'une activité d'une période de vacances.
+    /// </summary>
+    /// <param name="id">L'identifiant unique de l'activité.</param>
+    /// <returns>Les détails de l'activité.</returns>
+    /// <response code="200">Retourne les détails de l'activité.</response>
+    /// <response code="404">Si l'activité n'existe pas.</response>
+    /// <response code="403">Si l'utilisateur n'est pas autorisé à accéder à la période de vacances.</response>
     [HttpGet("{id}")]
     public async Task<ActionResult<ActivityResponse>> GetActivity(Guid id)
     {
@@ -94,6 +108,13 @@ public class ActivitiesController : ControllerBase
             );
     }
 
+    /// <summary>
+    /// Permet de récupérer la météo d'une activité.
+    /// </summary>
+    /// <param name="id">L'identifiant unique de la période de l'activité.</param>
+    /// <returns>Les données météoroogiques de l'activité.</returns>
+    /// <response code="200">Retourne les données météoroogiques de l'activité.</response>
+    /// <response code="404">Si l'activité n'existe pas.</response>
     [HttpGet("{id}/weather")]
     public async Task<ActionResult<WeatherResponse>> GetActivityWeather([FromServices] IWeatherService weatherService, [FromRoute] Guid id)
     {
@@ -116,8 +137,14 @@ public class ActivitiesController : ControllerBase
         }
     }
 
-    // PUT: api/Activities/5
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+    /// <summary>
+    /// Met à jour une activité.
+    /// </summary>
+    /// <param name="id">L'identifiant unique de l'activité.</param>
+    /// <param name="activityDto">Les détails de l'activité modifiés.</param>
+    /// <returns></returns>
+    /// <response code="204">Si l'activité a été mise à jour.</response>
+    /// <response code="404">Si l'activité n'existe pas.</response>
     [HttpPut("{id}")]
     public async Task<IActionResult> PutActivity(Guid id, UpsertActivityRequest activityDto)
     {
@@ -144,8 +171,15 @@ public class ActivitiesController : ControllerBase
         return NoContent();
     }
 
-    // POST: api/Activities
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+    /// <summary>
+    /// Crée une nouvelle activité pour une période de vacances.
+    /// </summary>
+    /// <param name="holidayId">L'identifiant unique de la période de vacances.</param>
+    /// <param name="activityDto">Les détails de l'activité.</param>
+    /// <returns>Une réponse HTTP 201 avec l'activité créée.</returns>
+    /// <response code="201">Retourne l'activité créée.</response>
+    /// <response code="403">Si l'utilisateur n'est pas autorisé à accéder à la période de vacances.</response>
+    /// <response code="404">Si la période de vacances n'existe pas.</response>
     [HttpPost("holiday/{holidayId}")]
     public async Task<ActionResult<ActivityResponse>> PostActivity([FromRoute] Guid holidayId, [FromBody] UpsertActivityRequest activityDto)
     {
@@ -200,7 +234,14 @@ public class ActivitiesController : ControllerBase
             ));
     }
 
-    // DELETE: api/Activities/5
+    /// <summary>
+    /// Supprime une activité d'une période de vacances.
+    /// </summary>
+    /// <param name="id">L'identifiant unique de l'activité.</param>
+    /// <returns></returns>
+    /// <response code="204">Si l'activité a été supprimée.</response>
+    /// <response code="404">Si l'activité n'existe pas.</response>
+    /// <response code="403">Si l'utilisateur n'est pas autorisé à accéder à la période de vacances.</response>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteActivity(Guid id)
     {

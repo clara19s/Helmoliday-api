@@ -22,6 +22,14 @@ public class InvitationsController : ControllerBase
         _emailSender = emailSender;
     }
 
+    /// <summary>
+    /// Crée une invitation pour un utilisateur dans une période de vacances.
+    /// </summary>
+    /// <param name="invitation">Un objet reprenant l'identifiant d'une période de vacances ainsi que l'e-mail d'un utilisateur.</param>
+    /// <returns></returns>
+    /// <response code="204">L'invitation a été créée.</response>
+    /// <response code="400">L'invitation est invalide.</response>
+    /// <response code="404">L'utilisateur ou la période de vacances n'a pas été trouvé.</response>
     [HttpPost]
     public async Task<ActionResult<Invitation>> PostInvitation([FromBody] InvitationRequest invitation)
     {
@@ -64,9 +72,15 @@ public class InvitationsController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/Invitations/5
+    /// <summary>
+    /// Supprime l'utilisateur courant d'une période de vacances.
+    /// </summary>
+    /// <param name="holidayId">Identifiant unique d'une période de vacances.</param>
+    /// <returns></returns>
+    /// <response code="204">L'utilisateur a été supprimé de la période de vacances.</response>
+    /// <response code="404">L'utilisateur ou la période de vacances n'a pas été trouvé.</response>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteInvitation(Guid id)
+    public async Task<IActionResult> DeleteInvitation(Guid holidayId)
     {
         if (_context.Invitations == null)
         {
@@ -74,7 +88,7 @@ public class InvitationsController : ControllerBase
         }
         var user = await _userManager.GetUserAsync(HttpContext.User);
 
-        var invitations = _context.Invitations.Where(i => i.HolidayId == id);
+        var invitations = _context.Invitations.Where(i => i.HolidayId == holidayId);
         var invitation = invitations.Where(i => i.UserId == user.Id).FirstOrDefault();
 
         if (invitation == null)
@@ -85,7 +99,7 @@ public class InvitationsController : ControllerBase
         if (invitations.Count() == 1)
         {
             _context.Invitations.Remove(invitation);
-            var holiday = _context.Holidays.Where(h => h.Id == id).FirstOrDefault();
+            var holiday = _context.Holidays.Where(h => h.Id == holidayId).FirstOrDefault();
             _context.Holidays.Remove(holiday);
         }
         else

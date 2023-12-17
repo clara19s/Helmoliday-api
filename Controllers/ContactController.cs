@@ -10,9 +10,13 @@ namespace HELMoliday.Controllers;
 [ApiController]
 public class ContactController : ControllerBase
 {
+    /// <summary>
+    /// Envoie un e-mail à l'administrateur du site ainsi qu'une copie à l'utilisateur.
+    /// </summary>
+    /// <param name="request">Une demande de contact.</param>
+    /// <returns>Une réponse HTTP 201.</returns>
+    /// <response code="201">Une réponse HTTP 201.</response>
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Post([FromBody] ContactRequest request, [FromServices] IEmailSender emailSender)
     {
         var message = new Message()

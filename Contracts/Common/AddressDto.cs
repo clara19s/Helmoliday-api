@@ -1,13 +1,14 @@
 ﻿using HELMoliday.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace HELMoliday.Contracts.Common
 {
     public record AddressDto(
-        string Street, 
-        string StreetNumber,
-        string PostalCode,
-        string City,
-        string Country
+        [Required] string Street, 
+        [Required] string StreetNumber,
+        [Required] string PostalCode,
+        [Required] string City,
+        [Required] string Country
      );
 
     public class AddressConverter

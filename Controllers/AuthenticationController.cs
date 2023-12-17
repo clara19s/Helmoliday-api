@@ -31,6 +31,15 @@ public class AuthenticationController : ControllerBase
         _context = context;
     }
 
+    /// <summary>
+    /// Authentifie un utilisateur au moyen de son adresse email et de son mot de passe.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns>Une réponse contenant les informations de l'utilisateur et le token JWT.</returns>
+    /// <response code="200">Retourne les informations de l'utilisateur et son token JWT.</response>
+    /// <response code="400">Une ou plusieurs informations sont manquantes ou incorrectes.</response>
+    /// <response code="401">Les identifiants fournis sont invalides.</response>
+    /// <response code="404">Aucun compte utilisateur ne correspond à l'adresse e-mail fournie.</response>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -61,7 +70,7 @@ public class AuthenticationController : ControllerBase
         }
 
         user.AccessFailedCount = 0;
-        _ = _userManager.UpdateAsync(user);
+        await _userManager.UpdateAsync(user);
 
         var authResponse = new AuthResponse(
             user.Id,
@@ -75,6 +84,14 @@ public class AuthenticationController : ControllerBase
         return Ok(authResponse);
     }
 
+    /// <summary>
+    /// Inscrit l'utilisateur au moyen de son adresse email, de son mot de passe, de son prénom et de son nom.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns>Une réponse contenant les informations de l'utilisateur et le token JWT.</returns>
+    /// <response code="200">L'utilisateur a été créé avec succès.</response>
+    /// <response code="400">Une ou plusieurs informations sont manquantes ou incorrectes.</response>
+    /// <response code="409">Un compte utilisateur existe déjà avec l'adresse e-mail fournie.</response>
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, [FromServices] IEmailSender emailSender)
     {
@@ -122,6 +139,15 @@ public class AuthenticationController : ControllerBase
         return Ok(authResponse);
     }
 
+    /// <summary>
+    /// Authentifie l'utilisateur au moyen d'une plateforme tierce.
+    /// </summary>
+    /// <param name="platform">L'identifiant de la plateforme tierce (google, facebook ou linkedin).</param>
+    /// <param name="token">Le jeton d'authentification de la plateforme tierce.</param>
+    /// <returns>Une réponse contenant les informations de l'utilisateur et le token JWT.</returns>
+    /// <response code="200">Retourne les informations de l'utilisateur et son token JWT.</response>
+    /// <response code="400">Une ou plusieurs informations sont manquantes ou incorrectes.</response>
+    /// <response code="401">Les identifiants fournis sont invalides.</response>
     [HttpPost("oauth/{platform}")]
     public async Task<IActionResult> OAuthCallback([FromRoute] string platform, [FromBody] OAuthTokenRequest token, [FromServices] OAuthStrategyFactory authStrategyFactory)
     {

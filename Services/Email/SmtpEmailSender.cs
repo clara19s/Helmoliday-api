@@ -31,6 +31,7 @@ public class SmtpEmailSender : IEmailSender
         emailMessage.Cc.AddRange(message.CarbonCopy.Select(x => new MailboxAddress(x.Name, x.EmailAddress)));
         return emailMessage;
     }
+
     private async void Send(MimeMessage mailMessage)
     {
         using var client = new SmtpClient();

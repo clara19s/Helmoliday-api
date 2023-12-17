@@ -16,6 +16,11 @@ public class StatisticsController : ControllerBase
         _context = context;
     }
 
+    /// <summary>
+    /// Récupère le nombre total d'utilisateurs.
+    /// </summary>
+    /// <returns>Le nombre total d'utilisateurs.</returns>
+    /// <response code="200">Le nombre total d'utilisateurs.</response>
     [HttpGet("users")]
     [AllowAnonymous]
     public async Task<IActionResult> GetTotalUsers()
@@ -24,6 +29,12 @@ public class StatisticsController : ControllerBase
         return Ok(userCount);
     }
 
+    /// <summary>
+    /// Récupère le nombre total d'utilisateurs par pays.
+    /// </summary>
+    /// <param name="dateString">Une date au format "YYYY-mm-dd HH:mm".</param>
+    /// <returns>Un tableau contenant le nombre total d'utilisateurs par pays.</returns>
+    /// <response code="200">Un tableau contenant le nombre total d'utilisateurs par pays.</response>
     [HttpGet("holidays")]
     [AllowAnonymous]
     public async Task<IActionResult> GetUsersOnHolidayByCountry([FromQuery] string dateString)
