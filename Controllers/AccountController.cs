@@ -163,7 +163,7 @@ namespace HELMoliday.Controllers
               "bca1b2adb1b72d81f3f3",
               options);
 
-            _ = pusher.TriggerAsync("stats", "update:userCount", _context.Users.Count());
+            await pusher.TriggerAsync("stats", "update:userCount", _context.Users.Count());
 
             return NoContent();
         }
