@@ -131,10 +131,7 @@ public class AuthenticationController : ControllerBase
             Content = "Cher(e) client(e),<br><br>Félicitations ! Votre compte Helmoliday a été créé avec succès.<br><br>L'équipe Helmoliday"
         };
         await emailSender.SendEmailAsync(message);
-        _ = Task.Run(async () =>
-        {
-            await NotifyStats();
-        });
+        await NotifyStats();
 
         return Ok(authResponse);
     }
@@ -171,7 +168,7 @@ public class AuthenticationController : ControllerBase
                 _logger.LogError($"Failed to create user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
                 return BadRequest("Failed to create user.");
             }
-            _ = NotifyStats();
+            await NotifyStats();
         }
 
         var authResponse = new AuthResponse(
