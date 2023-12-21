@@ -5,6 +5,8 @@ using HELMoliday.Contracts.Invitation;
 using Microsoft.AspNetCore.Identity;
 using HELMoliday.Options;
 using HELMoliday.Services.Email;
+using HELMoliday.Exceptions;
+using HELMoliday.Filters;
 
 namespace HELMoliday.Controllers;
 [Route("invitations")]
@@ -12,14 +14,16 @@ namespace HELMoliday.Controllers;
 public class InvitationsController : ControllerBase
 {
     private readonly HELMolidayContext _context;
+    private readonly ILogger<InvitationsController> _logger;
     private readonly UserManager<User> _userManager;
     private readonly IEmailSender _emailSender;
 
-    public InvitationsController(HELMolidayContext context, UserManager<User> userManager, IEmailSender emailSender)
+    public InvitationsController(HELMolidayContext context, UserManager<User> userManager, IEmailSender emailSender, ILogger<InvitationsController> logger)
     {
         _context = context;
         _userManager = userManager;
         _emailSender = emailSender;
+        _logger = logger;
     }
 
     /// <summary>
@@ -42,14 +46,19 @@ public class InvitationsController : ControllerBase
 
         if (holiday == null)
         {
-            return NotFound("Aucun groupe ne correspond à cet identifiant.");
+            throw new NotFoundException("La période de vacances n'a pas été trouvée.");
         }
 
         var user = _context.Users.Where(u => u.Email == invitation.Email).FirstOrDefault();
 
         if (user == null)
         {
-            return NotFound("Aucun utilisateur ne correspond à cette adresse e-mail.");
+            throw new NotFoundException("L'utilisateur n'a pas été trouvé.");
+        }
+
+        if (_context.Invitations.Where(i => i.HolidayId == holiday.Id && i.UserId == user.Id).FirstOrDefault() != null)
+        {
+            throw new HttpResponseException(400, "L'utilisateur a déjà été invité dans cette période de vacances.");
         }
 
         var invitationModel = new Invitation
@@ -60,14 +69,20 @@ public class InvitationsController : ControllerBase
         _context.Invitations.Add(invitationModel);
         await _context.SaveChangesAsync();
 
-        MessageAddress email = new(user.FirstName, user.Email);
-        Message message = new()
+        try
         {
-            To = new List<MessageAddress> { email },
-            Subject = $"Vous avez été invité dans le groupe \"{holiday.Name}\"",
-            Content = $"Cher(e) {user.FullName},<br><br>Vous avez une nouvelle invitation pour le groupe {holiday.Name}"
-        };
-        await _emailSender.SendEmailAsync(message);
+            MessageAddress email = new(user.FirstName, user.Email);
+            Message message = new()
+            {
+                To = new List<MessageAddress> { email },
+                Subject = $"Vous avez été invité dans le groupe \"{holiday.Name}\"",
+                Content = $"Cher(e) {user.FullName},<br><br>Vous avez une nouvelle invitation pour le groupe {holiday.Name}"
+            };
+            await _emailSender.SendEmailAsync(message);
+        } catch (Exception)
+        {
+            _logger.LogError($"Failed to send email to {user.Email}");
+        }
 
         return NoContent();
     }
@@ -79,13 +94,9 @@ public class InvitationsController : ControllerBase
     /// <returns></returns>
     /// <response code="204">L'utilisateur a été supprimé de la période de vacances.</response>
     /// <response code="404">L'utilisateur ou la période de vacances n'a pas été trouvé.</response>
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteInvitation(Guid holidayId)
+    [HttpDelete("{holidayId}")]
+    public async Task<IActionResult> DeleteInvitation([FromRoute] Guid holidayId)
     {
-        if (_context.Invitations == null)
-        {
-            return NotFound();
-        }
         var user = await _userManager.GetUserAsync(HttpContext.User);
 
         var invitations = _context.Invitations.Where(i => i.HolidayId == holidayId);

@@ -164,7 +164,7 @@ public class HolidaysController : ControllerBase
     [HttpGet("{id}/calendar")]
     public async Task<ActionResult> GetCalendar(Guid id, [FromServices] ICalendarService calendarService)
     {
-        var holiday = _context.Holidays.Where(h => h.Id == id).Include(h => h.Activities).FirstOrDefault();
+        var holiday = _context.Holidays.Where(h => h.Id == id).Include(h => h.Invitations).Include(h => h.Activities).FirstOrDefault();
 
         if (holiday == null)
         {
@@ -277,6 +277,8 @@ public class HolidaysController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+        await NotifyStats(holiday, true);
+
         return Created("GetHoliday", new { id = holiday.Id });
     }
 
@@ -297,6 +299,8 @@ public class HolidaysController : ControllerBase
 
         _context.Holidays.Remove(holiday);
         await _context.SaveChangesAsync();
+
+        await NotifyStats(holiday, false);
 
         return NoContent();
     }
@@ -501,5 +505,28 @@ public class HolidaysController : ControllerBase
         var protocol = HttpContext.Request.IsHttps ? "https" : "http";
         var domaineName = HttpContext.Request.Host.Value.Contains("localhost") ? HttpContext.Request.Host.Value : "porthos-intra.cg.helmo.be/Q210266";
         return $"{protocol}://{domaineName}{filePath}";
+    }
+
+    private static async Task NotifyStats(Holiday holiday, bool isNew)
+    {
+        var options = new PusherOptions
+        {
+            Cluster = "eu",
+            Encrypted = false
+        };
+
+        // TODO: Get from config
+        var pusher = new Pusher(
+          "1700454",
+          "c79fa94e85416eeb4f1e",
+          "bca1b2adb1b72d81f3f3",
+          options);
+
+        await pusher.TriggerAsync("stats", isNew ? "update:newHoliday" : "update:removeHoliday", new
+        {
+            country = holiday.Address.Country,
+            startDate = holiday.StartDate.ToString("yyyy-MM-dd HH:mm"),
+            endDate = holiday.EndDate.ToString("yyyy-MM-dd HH:mm")
+        });
     }
 }

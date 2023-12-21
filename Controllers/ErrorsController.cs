@@ -12,10 +12,10 @@ public class ErrorsController : ControllerBase
     public IActionResult HandleErrorDevelopment(
     [FromServices] IHostEnvironment hostEnvironment)
     {
-        if (!hostEnvironment.IsDevelopment())
+        /*if (!hostEnvironment.IsDevelopment())
         {
             return NotFound();
-        }
+        }*/
 
         var exceptionHandlerFeature =
             HttpContext.Features.Get<IExceptionHandlerFeature>()!;
