@@ -61,8 +61,8 @@ public class ActivitiesController : ControllerBase
                 a.Id,
                 a.Name,
                 a.Description,
-                a.StartDate.ToString("yyyy-MM-dd HH:ss"),
-                a.EndDate.ToString("yyyy-MM-dd HH:ss"),
+                a.StartDate.ToString("yyyy-MM-dd HH:mm"),
+                a.EndDate.ToString("yyyy-MM-dd HH:mm"),
                 AddressConverter.CreateFromModel(a.Address),
                 a.Category.ToString() 
                 ))
@@ -101,8 +101,8 @@ public class ActivitiesController : ControllerBase
             activity.Id,
             activity.Name,
             activity.Description,
-            activity.StartDate.ToString("yyyy-MM-dd HH:ss"),
-            activity.EndDate.ToString("yyyy-MM-dd HH:ss"),
+            activity.StartDate.ToString("yyyy-MM-dd HH:mm"),
+            activity.EndDate.ToString("yyyy-MM-dd HH:mm"),
             AddressConverter.CreateFromModel(activity.Address),
             activity.Category.ToString()
             );
