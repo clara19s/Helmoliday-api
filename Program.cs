@@ -90,7 +90,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy = policy.AllowAnyOrigin() // TODO: Spécifier des origines concrètes
+        policy = policy.WithOrigins(
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "https://panoramix.cg.helmo.be",
+            "https://panoramix-intra.cg.helmo.be"
+            )
         .AllowAnyMethod()
         .AllowAnyHeader();
     });
