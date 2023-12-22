@@ -328,7 +328,6 @@ public class HolidaysController : ControllerBase
             Encrypted = false
         };
 
-        // TODO: Get from config
         var pusher = new Pusher(
           "1700454",
           "c79fa94e85416eeb4f1e",
@@ -382,7 +381,6 @@ public class HolidaysController : ControllerBase
             }
         }
 
-        // TODO: Get from config
         var pusher = new Pusher(
           "1700454",
           "c79fa94e85416eeb4f1e",
@@ -515,7 +513,6 @@ public class HolidaysController : ControllerBase
             Encrypted = false
         };
 
-        // TODO: Get from config
         var pusher = new Pusher(
           "1700454",
           "c79fa94e85416eeb4f1e",
