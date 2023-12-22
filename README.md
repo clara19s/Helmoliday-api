@@ -31,4 +31,8 @@ Lien vers la documentation Swagger : [https://porthos-intra.cg.helmo.be/Q210266/
   "token": "..."
 }
 ```
-3. L'utilisateur peut émettre des requêtes sur des endpoints protégés en ajoutant l'en-tête Authorization dans ses requêtes accompagné du Bearer Token JWT.
+3. L'utilisateur peut émettre des requêtes sur des endpoints protégés en ajoutant l'en-tête Authorization dans ses requêtes accompagné du `Bearer Token` JWT.
+
+## Problème connu
+### Ajout d'une activité
+Lors de l'ajout d'une activité, il se peut que l'API ne réponde plus à cause de l'envoi de mails répétés. Ce problème survient lorsqu'on ajoute plusieurs activités dans période de temps relativement courte.
